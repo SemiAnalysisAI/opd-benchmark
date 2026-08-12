@@ -1,0 +1,217 @@
+{
+  "recipe": {
+    "steps": 15,
+    "prompts_per_step": 16,
+    "rollouts_per_prompt": 4,
+    "trajectories_per_step": 64,
+    "total_trajectories": 960
+  },
+  "comparison": "one physical math-teacher endpoint vs routed math+code endpoints",
+  "controls": "Same student checkpoint, prompt pool, batch shape, optimizer, loss, token limits, and nominal seed in each framework.",
+  "quality_equivalent": false,
+  "quality_caveat": "The one-teacher arm sends both logical domains to the math policy. It isolates systems footprint but is not a model-quality control.",
+  "repetitions_per_cell": 1,
+  "frameworks": {
+    "prime-rl": {
+      "active_trajectories_per_second": {
+        "one_teacher": 9.283536570649398,
+        "two_teachers": 9.27632839269515,
+        "absolute_delta": -0.007208177954247219,
+        "two_vs_one_percent": -0.07764474130512733
+      },
+      "active_tokens_per_second": {
+        "one_teacher": 3233.6878759714514,
+        "two_teachers": 3226.210386558616,
+        "absolute_delta": -7.477489412835439,
+        "two_vs_one_percent": -0.2312372034542487
+      },
+      "active_seconds": {
+        "one_teacher": 103.40886715899978,
+        "two_teachers": 103.48922109699924,
+        "absolute_delta": 0.08035393799946178,
+        "two_vs_one_percent": 0.07770507520976633
+      },
+      "steady_median_step_seconds": {
+        "one_teacher": 5.526857922499403,
+        "two_teachers": 5.48890814600054,
+        "absolute_delta": -0.037949776498862775,
+        "two_vs_one_percent": -0.68664288156155
+      },
+      "teacher_start_seconds": {
+        "one_teacher": 62.0,
+        "two_teachers": 123.0,
+        "absolute_delta": 61.0,
+        "two_vs_one_percent": 98.38709677419355
+      },
+      "framework_wall_seconds": {
+        "one_teacher": 206.0,
+        "two_teachers": 206.0,
+        "absolute_delta": 0.0,
+        "two_vs_one_percent": 0.0
+      },
+      "total_wall_seconds": {
+        "one_teacher": 268.0,
+        "two_teachers": 329.0,
+        "absolute_delta": 61.0,
+        "two_vs_one_percent": 22.76119402985075
+      },
+      "training_window_energy_wh": {
+        "one_teacher": 15.462044444444441,
+        "two_teachers": 15.474605555555552,
+        "absolute_delta": 0.012561111111111245,
+        "two_vs_one_percent": 0.08123835858993012
+      },
+      "teacher_side_peak_memory_gib": {
+        "gpu_index": 0,
+        "one_teacher": 48.1494140625,
+        "two_teachers": 67.9345703125,
+        "absolute_delta": 19.78515625,
+        "two_vs_one_percent": 41.091167224419436
+      },
+      "mean_response_tokens": {
+        "one_teacher": 198.3875,
+        "two_teachers": 198.02708333333334,
+        "absolute_delta": -0.3604166666666515,
+        "two_vs_one_percent": -0.18167307248019293
+      },
+      "endpoint_requests": {
+        "one_teacher": 1064,
+        "two_teachers": 1066
+      }
+    },
+    "miles": {
+      "active_trajectories_per_second": {
+        "one_teacher": 6.073171947240754,
+        "two_teachers": 7.258321321085297,
+        "absolute_delta": 1.1851493738445429,
+        "two_vs_one_percent": 19.514503856308508
+      },
+      "active_tokens_per_second": {
+        "one_teacher": 2184.0707877472346,
+        "two_teachers": 2476.388019726781,
+        "absolute_delta": 292.31723197954625,
+        "two_vs_one_percent": 13.384054840139026
+      },
+      "active_seconds": {
+        "one_teacher": 158.0722575187683,
+        "two_teachers": 132.2619869709015,
+        "absolute_delta": -25.81027054786682,
+        "two_vs_one_percent": -16.32814698354157
+      },
+      "steady_median_step_seconds": {
+        "one_teacher": 10.629998087882996,
+        "two_teachers": 8.67705774307251,
+        "absolute_delta": -1.9529403448104858,
+        "two_vs_one_percent": -18.37197268207055
+      },
+      "teacher_start_seconds": {
+        "one_teacher": 29.0,
+        "two_teachers": 57.0,
+        "absolute_delta": 28.0,
+        "two_vs_one_percent": 96.55172413793103
+      },
+      "framework_wall_seconds": {
+        "one_teacher": 284.0,
+        "two_teachers": 256.0,
+        "absolute_delta": -28.0,
+        "two_vs_one_percent": -9.859154929577462
+      },
+      "total_wall_seconds": {
+        "one_teacher": 319.0,
+        "two_teachers": 319.0,
+        "absolute_delta": 0.0,
+        "two_vs_one_percent": 0.0
+      },
+      "training_window_energy_wh": {
+        "one_teacher": 20.156441666666673,
+        "two_teachers": 18.05432222222222,
+        "absolute_delta": -2.1021194444444546,
+        "two_vs_one_percent": -10.429020554361013
+      },
+      "teacher_side_peak_memory_gib": {
+        "gpu_index": 1,
+        "one_teacher": 37.30078125,
+        "two_teachers": 59.939453125,
+        "absolute_delta": 22.638671875,
+        "two_vs_one_percent": 60.692219080532
+      },
+      "mean_response_tokens": {
+        "one_teacher": 210.221875,
+        "two_teachers": 191.775,
+        "absolute_delta": -18.446875000000006,
+        "two_vs_one_percent": -8.774955032629217
+      },
+      "endpoint_requests": {
+        "one_teacher": 961,
+        "two_teachers": 962
+      }
+    },
+    "verl": {
+      "active_trajectories_per_second": {
+        "one_teacher": 10.924708142503558,
+        "two_teachers": 10.606087154037521,
+        "absolute_delta": -0.31862098846603715,
+        "two_vs_one_percent": -2.916517167414423
+      },
+      "active_tokens_per_second": {
+        "one_teacher": 3860.0407838759606,
+        "two_teachers": 3619.227809248235,
+        "absolute_delta": -240.81297462772545,
+        "two_vs_one_percent": -6.238612183416348
+      },
+      "active_seconds": {
+        "one_teacher": 87.87420107499565,
+        "two_teachers": 90.51405914899988,
+        "absolute_delta": 2.6398580740042235,
+        "two_vs_one_percent": 3.004133228763295
+      },
+      "steady_median_step_seconds": {
+        "one_teacher": 4.903785930000595,
+        "two_teachers": 4.900518169999486,
+        "absolute_delta": -0.0032677600011083996,
+        "two_vs_one_percent": -0.06663749290353183
+      },
+      "teacher_start_seconds": {
+        "one_teacher": 28.0,
+        "two_teachers": 59.0,
+        "absolute_delta": 31.0,
+        "two_vs_one_percent": 110.71428571428572
+      },
+      "framework_wall_seconds": {
+        "one_teacher": 182.0,
+        "two_teachers": 189.0,
+        "absolute_delta": 7.0,
+        "two_vs_one_percent": 3.8461538461538547
+      },
+      "total_wall_seconds": {
+        "one_teacher": 210.0,
+        "two_teachers": 248.0,
+        "absolute_delta": 38.0,
+        "two_vs_one_percent": 18.0952380952381
+      },
+      "training_window_energy_wh": {
+        "one_teacher": 13.387313888888889,
+        "two_teachers": 13.631472222222225,
+        "absolute_delta": 0.24415833333333659,
+        "two_vs_one_percent": 1.8238037545080799
+      },
+      "teacher_side_peak_memory_gib": {
+        "gpu_index": 1,
+        "one_teacher": 38.4375,
+        "two_teachers": 58.64453125,
+        "absolute_delta": 20.20703125,
+        "two_vs_one_percent": 52.571138211382106
+      },
+      "mean_response_tokens": {
+        "one_teacher": 204.79375,
+        "two_teachers": 192.703125,
+        "absolute_delta": -12.090624999999989,
+        "two_vs_one_percent": -5.903805658131656
+      },
+      "endpoint_requests": {
+        "one_teacher": 961,
+        "two_teachers": 962
+      }
+    }
+  }
+}

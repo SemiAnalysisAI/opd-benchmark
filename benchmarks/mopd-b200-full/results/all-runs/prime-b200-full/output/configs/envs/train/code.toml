@@ -1,0 +1,53 @@
+[env]
+id = ""
+max_concurrent_agents = 1
+
+[env.taskset]
+id = "mopd-prompts-v1"
+data_path = "/dev/shm/opd-bench/data-full/prime_code_train.jsonl"
+
+[env.taskset.task]
+judges = []
+
+[env.timeout]
+
+[env.retries]
+max_retries = 0
+include = []
+exclude = []
+
+[env.interception]
+type = "elastic"
+multiplex = 32
+
+[env.agent.harness]
+id = "null"
+forward_env = []
+skills = []
+
+[env.agent.harness.env]
+
+[env.agent.runtime]
+type = "subprocess"
+
+[env.agent.timeout]
+
+[env.agent.retries]
+max_retries = 0
+include = []
+exclude = []
+
+[serve]
+address = "tcp://127.0.0.1:5001"
+
+[serve.pool]
+type = "elastic"
+multiplex = 128
+
+[legacy.args]
+
+[legacy.extra_env_kwargs]
+
+[log]
+level = "info"
+json_logging = false

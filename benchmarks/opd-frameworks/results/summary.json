@@ -1,0 +1,363 @@
+{
+  "recipe": {
+    "steps": 15,
+    "prompts_per_step": 8,
+    "rollouts_per_prompt": 16,
+    "trajectories_per_step": 128,
+    "total_trajectories": 1920
+  },
+  "frameworks": [
+    {
+      "framework": "Prime-RL",
+      "wall": {
+        "framework": "prime-rl",
+        "run_id": "full15",
+        "start_epoch": 1786108894,
+        "teacher_ready_epoch": 1786108955,
+        "training_start_epoch": 1786108955,
+        "end_epoch": 1786109170,
+        "teacher_start_seconds": 61,
+        "framework_wall_seconds": 215,
+        "wall_seconds": 276
+      },
+      "time_to_first_update_seconds": 162.08477139472961,
+      "task_score": {
+        "initial": 0.13348942680172912,
+        "final": 0.8319031044019242,
+        "mean": 0.5036215791925654,
+        "median": 0.6264248477799571,
+        "steady_mean": 0.5300595900776252,
+        "steady_median": 0.6429466164438189,
+        "tail5_mean": 0.762148800812484,
+        "min": 0.13348942680172912,
+        "max": 0.8319031044019242
+      },
+      "truncation_rate": {
+        "initial": 0.8125,
+        "final": 0.0078125,
+        "mean": 0.3458333333333333,
+        "median": 0.1796875,
+        "steady_mean": 0.3125,
+        "steady_median": 0.17578125,
+        "tail5_mean": 0.0109375,
+        "min": 0.0,
+        "max": 0.8125
+      },
+      "response_tokens": {
+        "initial": 117.3359375,
+        "final": 42.8984375,
+        "mean": 77.0125,
+        "median": 64.75,
+        "steady_mean": 74.13225446428571,
+        "steady_median": 64.40234375,
+        "tail5_mean": 47.184375,
+        "min": 42.8984375,
+        "max": 117.3359375
+      },
+      "reverse_kl": {
+        "initial": 0.3298839032649994,
+        "final": 0.12783333659172058,
+        "mean": 0.22762748698393503,
+        "median": 0.1840021312236786,
+        "steady_mean": 0.2203234572495733,
+        "steady_median": 0.1825704425573349,
+        "tail5_mean": 0.14714853465557098,
+        "min": 0.12315832078456879,
+        "max": 0.3468555808067322
+      },
+      "native_step_seconds": {
+        "initial": 78.409446226,
+        "final": 6.413451460999568,
+        "mean": 11.569014164666562,
+        "median": 6.587555993000933,
+        "steady_mean": 6.794697588857032,
+        "steady_median": 6.50050372700025,
+        "tail5_mean": 6.2642636756001595,
+        "min": 5.216438545001438,
+        "max": 78.409446226
+      },
+      "native_tokens_per_second": {
+        "initial": 1460.3674945231483,
+        "final": 3512.5528308504404,
+        "mean": 5245.082859246812,
+        "median": 5278.207157057591,
+        "steady_mean": 5515.419671012787,
+        "steady_median": 5297.406922233912,
+        "tail5_mean": 4791.293251971993,
+        "min": 1460.3674945231483,
+        "max": 8424.512478609957
+      },
+      "actor_mfu_pct": {
+        "initial": 0.630850973736349,
+        "final": 1.5173559956330878,
+        "mean": 2.265776006034785,
+        "median": 2.280085072490065,
+        "steady_mean": 2.3825563654846733,
+        "steady_median": 2.288379005765365,
+        "tail5_mean": 2.0697475291655225,
+        "min": 0.630850973736349,
+        "max": 3.6392291120670874
+      },
+      "peak_actor_memory_gib_native": 11.787109375,
+      "gpu": {
+        "0": {
+          "samples": 265,
+          "mean_utilization_pct": 12.475471698113207,
+          "p95_utilization_pct": 77.0,
+          "peak_memory_gib": 64.6767578125,
+          "mean_power_w": 133.07109433962262,
+          "energy_wh": 10.212482312499988
+        },
+        "1": {
+          "samples": 265,
+          "mean_utilization_pct": 6.29433962264151,
+          "p95_utilization_pct": 60.0,
+          "peak_memory_gib": 13.0888671875,
+          "mean_power_w": 110.32950943396226,
+          "energy_wh": 8.474825112500003
+        },
+        "combined_energy_wh": 18.687307424999993
+      },
+      "total_trajectories": 1920,
+      "end_to_end_trajectories_per_second": 6.956521739130435,
+      "framework_window_trajectories_per_second": 8.930232558139535,
+      "total_generated_response_tokens": 147864.0,
+      "end_to_end_generated_response_tokens_per_second": 535.7391304347826
+    },
+    {
+      "framework": "verl",
+      "wall": {
+        "framework": "verl",
+        "run_id": "full15",
+        "start_epoch": 1786109186,
+        "training_start_epoch": 1786109186,
+        "end_epoch": 1786109415,
+        "framework_wall_seconds": 229,
+        "wall_seconds": 229
+      },
+      "time_to_first_update_seconds_approx": 158.34756037900115,
+      "initialization_seconds_approx": 135.8526143449999,
+      "task_score": {
+        "initial": 0.10995139181613922,
+        "final": 0.801912784576416,
+        "mean": 0.604646177093188,
+        "median": 0.738031268119812,
+        "steady_mean": 0.6399815188986915,
+        "steady_median": 0.7394460439682007,
+        "tail5_mean": 0.7659469842910767,
+        "min": 0.10995139181613922,
+        "max": 0.801912784576416
+      },
+      "truncation_rate": {
+        "initial": 0.84375,
+        "final": 0.0703125,
+        "mean": 0.23125,
+        "median": 0.0703125,
+        "steady_mean": 0.1875,
+        "steady_median": 0.0625,
+        "tail5_mean": 0.0484375,
+        "min": 0.0078125,
+        "max": 0.84375
+      },
+      "response_tokens": {
+        "initial": 116.484375,
+        "final": 55.09375,
+        "mean": 66.05885416666666,
+        "median": 53.109375,
+        "steady_mean": 62.45703125,
+        "steady_median": 52.703125,
+        "tail5_mean": 49.978125,
+        "min": 42.4140625,
+        "max": 116.484375
+      },
+      "reverse_kl": {
+        "initial": 0.24806714057922363,
+        "final": 0.11751873791217804,
+        "mean": 0.19298713207244872,
+        "median": 0.19569610059261322,
+        "steady_mean": 0.18905284575053624,
+        "steady_median": 0.18758400529623032,
+        "tail5_mean": 0.13935441374778748,
+        "min": 0.11751873791217804,
+        "max": 0.2887972891330719
+      },
+      "native_step_seconds": {
+        "initial": 22.49494603400126,
+        "final": 4.996438690999639,
+        "mean": 6.20982571033334,
+        "median": 4.989959877999354,
+        "steady_mean": 5.046602830071346,
+        "steady_median": 4.988105829999768,
+        "tail5_mean": 4.973019451000073,
+        "min": 4.944063634999111,
+        "max": 22.49494603400126
+      },
+      "native_tokens_per_second": {
+        "initial": 485.7535547533107,
+        "final": 1382.985047419348,
+        "mean": 1368.974460590175,
+        "median": 1342.4957642516874,
+        "steady_mean": 1432.0616681499512,
+        "steady_median": 1348.2092847138924,
+        "tail5_mean": 1302.4867786240352,
+        "min": 485.7535547533107,
+        "max": 1955.7465590256286
+      },
+      "actor_mfu_pct": {
+        "initial": 8.87802697118145,
+        "final": 10.135633249871221,
+        "mean": 9.845892455123215,
+        "median": 9.857275133671788,
+        "steady_mean": 9.915025703976198,
+        "steady_median": 9.88591207555536,
+        "tail5_mean": 9.706799411851545,
+        "min": 8.87802697118145,
+        "max": 10.743914650951139
+      },
+      "peak_actor_memory_gib_native": 12.445857048034668,
+      "gpu": {
+        "0": {
+          "samples": 221,
+          "mean_utilization_pct": 9.384615384615385,
+          "p95_utilization_pct": 68.0,
+          "peak_memory_gib": 41.4580078125,
+          "mean_power_w": 132.53339366515837,
+          "energy_wh": 8.45373484444444
+        },
+        "1": {
+          "samples": 221,
+          "mean_utilization_pct": 0.8280542986425339,
+          "p95_utilization_pct": 0.0,
+          "peak_memory_gib": 33.259765625,
+          "mean_power_w": 101.09090497737557,
+          "energy_wh": 6.4450663000000015
+        },
+        "combined_energy_wh": 14.898801144444441
+      },
+      "total_trajectories": 1920,
+      "end_to_end_trajectories_per_second": 8.384279475982533,
+      "framework_window_trajectories_per_second": 8.384279475982533,
+      "total_generated_response_tokens": 126833.0,
+      "end_to_end_generated_response_tokens_per_second": 553.8558951965066
+    },
+    {
+      "framework": "Miles",
+      "wall": {
+        "framework": "miles",
+        "run_id": "full15-scored",
+        "start_epoch": 1786110151,
+        "teacher_ready_epoch": 1786110180,
+        "ray_ready_epoch": 1786110186,
+        "training_start_epoch": 1786110186,
+        "end_epoch": 1786110486,
+        "teacher_start_seconds": 29,
+        "ray_start_seconds": 6,
+        "framework_wall_seconds": 300,
+        "wall_seconds": 335
+      },
+      "time_to_first_update_seconds": 161.173,
+      "task_score": {
+        "initial": 0.086353074971,
+        "final": 0.751197909107,
+        "mean": 0.5954162016386667,
+        "median": 0.743179340637,
+        "steady_mean": 0.6317778535435,
+        "steady_median": 0.7442442483075,
+        "tail5_mean": 0.772869821312,
+        "min": 0.086353074971,
+        "max": 0.804622990779
+      },
+      "task_score_sample_count_per_step": 128,
+      "truncation_rate": {
+        "initial": 0.8828125,
+        "final": 0.109375,
+        "mean": 0.24427083333333333,
+        "median": 0.1015625,
+        "steady_mean": 0.19866071428571427,
+        "steady_median": 0.09375,
+        "tail5_mean": 0.0484375,
+        "min": 0.0078125,
+        "max": 0.8828125
+      },
+      "response_tokens": {
+        "initial": 120.234375,
+        "final": 57.015625,
+        "mean": 68.4984375,
+        "median": 55.328125,
+        "steady_mean": 64.80301339285714,
+        "steady_median": 54.8828125,
+        "tail5_mean": 49.609375,
+        "min": 42.59375,
+        "max": 120.234375
+      },
+      "reverse_kl": {
+        "initial": 0.30381864309310913,
+        "final": 0.16414134204387665,
+        "mean": 0.22914275228977204,
+        "median": 0.19184140861034393,
+        "steady_mean": 0.22380876008953368,
+        "steady_median": 0.18657828122377396,
+        "tail5_mean": 0.1479799270629883,
+        "min": 0.11683765053749084,
+        "max": 0.4676600992679596
+      },
+      "native_step_seconds": {
+        "initial": 9.19837760925293,
+        "final": 11.150671005249023,
+        "mean": 11.334354384740193,
+        "median": 11.403903484344482,
+        "steady_mean": 11.486924154417855,
+        "steady_median": 11.450011253356934,
+        "tail5_mean": 11.312960386276245,
+        "min": 9.19837760925293,
+        "max": 12.342404127120972
+      },
+      "native_tokens_per_second": {
+        "initial": 5823.559833213297,
+        "final": 12130.557686080994,
+        "mean": 11684.17824789078,
+        "median": 11972.288977138718,
+        "steady_mean": 12102.79384893917,
+        "steady_median": 12033.701526066054,
+        "tail5_mean": 11473.074547056947,
+        "min": 5823.559833213297,
+        "max": 15362.16812831307
+      },
+      "wait_ratio": {
+        "initial": 0.34734963450205997,
+        "final": 0.8616160291801649,
+        "mean": 0.8222165424818001,
+        "median": 0.8618631463010591,
+        "steady_mean": 0.8561356073374958,
+        "steady_median": 0.8637884882503184,
+        "tail5_mean": 0.8665567741221215,
+        "min": 0.34734963450205997,
+        "max": 0.8701183235495769
+      },
+      "gpu": {
+        "0": {
+          "samples": 323,
+          "mean_utilization_pct": 10.41795665634675,
+          "p95_utilization_pct": 77.0,
+          "peak_memory_gib": 44.3544921875,
+          "mean_power_w": 124.30795665634675,
+          "energy_wh": 11.61139474861112
+        },
+        "1": {
+          "samples": 323,
+          "mean_utilization_pct": 0.21362229102167182,
+          "p95_utilization_pct": 0.0,
+          "peak_memory_gib": 44.658203125,
+          "mean_power_w": 115.63712074303406,
+          "energy_wh": 10.799102593055547
+        },
+        "combined_energy_wh": 22.41049734166667
+      },
+      "total_trajectories": 1920,
+      "end_to_end_trajectories_per_second": 5.731343283582089,
+      "framework_window_trajectories_per_second": 6.4,
+      "total_generated_response_tokens": 131517.0,
+      "end_to_end_generated_response_tokens_per_second": 392.5880597014925
+    }
+  ]
+}

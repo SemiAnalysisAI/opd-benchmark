@@ -1,0 +1,158 @@
+[2m16:38:38[0m [1m   INFO[0m [1m[22mTraining from scratch, cleaning any stale rollouts and broadcasts[0m[0m
+[transformers] kernels hub usage is disabled through the environment USE_HUB_KERNELS=NO
+[2m16:38:46[0m [1m   INFO[0m [1m[22mModel /root/opd-bench/mopd/models/student found at local path, skipping download[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mWrote subconfigs to /root/opd-bench/mopd/runs/prime-opd-matched/output/configs[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mUsing local->physical GPU mapping: {0: 0, 1: 1}[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mStarting RL run[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mStarting inference on GPU(s) 0[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mFrozen model references are configured - the rl entrypoint does not start them. Make sure these endpoints are serving before the orchestrator starts: /root/opd-bench/mopd/models/math-teacher (http://localhost:8001/v1); otherwise rollouts will hang.[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mStarting train env server math at tcp://127.0.0.1:5000[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mStarting train env server code at tcp://127.0.0.1:5001[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mStarting orchestrator process[0m[0m
+[2m16:38:46[0m [1m   INFO[0m [1m[22mStarting trainer on GPU(s) 1[0m[0m
+[2m16:38:46[0m [32m[1mSUCCESS[0m [32m[1m[22mStartup complete. Showing orchestrator logs...[0m[0m
+[transformers] kernels hub usage is disabled through the environment USE_HUB_KERNELS=NO
+[2m16:38:55[0m [1m   INFO[0m [1m[22mStarting orchestrator (algorithm: opd)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mSetting default executor to ThreadPoolExecutor(max_workers=64)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mInitializing tokenizer (name='/root/opd-bench/mopd/models/student' trust_remote_code=False chat_template=None)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mInitializing policy inference pool (base_url=http://localhost:8000/v1, model=/root/opd-bench/mopd/models/student)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mInitialized DefaultRenderer for /root/opd-bench/mopd/models/student[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mUsing direct renderer rollout client[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mInitializing monitor (wandb=None, prime_monitor=None)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mLogging metrics to /root/opd-bench/mopd/runs/prime-opd-matched/output/run_default/metrics.jsonl[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mConfigured 3 pre-batch rollout filter(s):[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22m  Monitoring gibberish filter (type=gibberish, enforce=False, token_id_threshold=100000, logprob_offset=2.0)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22m  Monitoring repetition filter (type=repetition, enforce=False, window=3000, prob_threshold=0.99)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22m  Monitoring zero_advantage filter (type=zero_advantage, enforce=False)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mConfigured 3 post-batch rollout filter(s):[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22m  Monitoring gibberish filter (type=gibberish, enforce=False, token_id_threshold=100000, logprob_offset=2.0)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22m  Monitoring repetition filter (type=repetition, enforce=False, window=3000, prob_threshold=0.99)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22m  Enforcing zero_advantage filter (type=zero_advantage, enforce=True)[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mLoading training environments[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mEnv math ready: num_tasks=128 group_scoring=False[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mEnv code ready: num_tasks=128 group_scoring=False[0m[0m
+[2m16:38:55[0m [32m[1mSUCCESS[0m [32m[1m[22mTrain environment(s) ready[0m[0m
+[2m16:38:55[0m [1m   INFO[0m [1m[22mWaiting for policy inference pool to be ready[0m[0m
+[2m16:39:05[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 10 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m16:39:05[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 10 seconds (Error: All connection attempts failed) on http://localhost:8100[0m[0m
+[2m16:39:15[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 20 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m16:39:15[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 20 seconds (Error: All connection attempts failed) on http://localhost:8100[0m[0m
+[2m16:39:25[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 30 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m16:39:35[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 40 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m16:39:45[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 50 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m16:39:46[0m [32m[1mSUCCESS[0m [32m[1m[22mPolicy inference pool ready[0m[0m
+[2m16:39:46[0m [1m   INFO[0m [1m[22mInitializing frozen model pool (model=/root/opd-bench/mopd/models/math-teacher, base_url=http://localhost:8001/v1)[0m[0m
+[2m16:39:46[0m [1m   INFO[0m [1m[22mInitializing frozen model pool (model=/root/opd-bench/mopd/models/math-teacher, base_url=http://localhost:8001/v1)[0m[0m
+[2m16:39:46[0m [1m   INFO[0m [1m[22mInitializing weight broadcast (type='filesystem')[0m[0m
+[2m16:39:46[0m [1m   INFO[0m [1m[22mInitializing training batch sender (type='zmq' host='localhost' port=5555 hwm=10)[0m[0m
+[2m16:39:46[0m [1m   INFO[0m [1m[22mZMQ training batch sender initialized: output_dir=/root/opd-bench/mopd/runs/prime-opd-matched/output/run_default endpoint=tcp://localhost:5555 hwm=10[0m[0m
+[2m16:39:46[0m [1m   INFO[0m [1m[22mTraining from scratch[0m[0m
+[2m16:39:46[0m [1m   INFO[0m [1m[22mStarting orchestrator loop (max_steps=15)[0m[0m
+[2m16:39:53[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:39:54[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 1 |    7.3s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 0 | Error 0.0% | Truncation 46.9%
+		 ╰─ code | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 0 | Error 0.0% | Truncation 21.4%
+		 ╰─ math | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 0 | Error 0.0% | Truncation 66.7%[0m[0m
+[2m16:39:56[0m [1m   INFO[0m [1m[22mTrain batch 20/64 (31.2%) (math=12, code=8) (+24 buffered); 39 inflight rollouts (train=39, eval=0 | math=31, code=8)[0m[0m
+[2m16:39:57[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:39:57[0m [1m   INFO[0m [1m[22mPausing dispatcher to prevent orchestrator from racing from trainer. Waiting for new policy...[0m[0m
+[2m16:39:58[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 2 |    3.6s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 1 | Error 0.0% | Truncation 53.1%
+		 ╰─ code | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 1 | Error 0.0% | Truncation 22.2%
+		 ╰─ math | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 1 | Error 0.0% | Truncation 92.9%[0m[0m
+[2m16:40:00[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:00[0m [1m   INFO[0m [1m[22mHolding batch 3 until the trainer publishes policy v1 (currently v0)[0m[0m
+[2m16:40:05[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v1[0m[0m
+[2m16:40:05[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 3 |    3.1s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 26.6%
+		 ╰─ code | Ratio 50.0% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 9.4%
+		 ╰─ math | Ratio 50.0% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 43.8%[0m[0m
+[2m16:40:06[0m [1m   INFO[0m [1m[22mTrain batch 8/64 (12.5%) (math=4, code=4) (+9 buffered); 0 inflight rollouts (train=0, eval=0 | math=0, code=0)[0m[0m
+[2m16:40:08[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:08[0m [1m   INFO[0m [1m[22mHolding batch 4 until the trainer publishes policy v2 (currently v1)[0m[0m
+[2m16:40:11[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v2[0m[0m
+[2m16:40:11[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 4 |    7.5s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 48.4%
+		 ╰─ code | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 27.8%
+		 ╰─ math | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 75.0%[0m[0m
+[2m16:40:16[0m [1m   INFO[0m [1m[22mTrain batch 0/64 (0.0%) (math=0, code=0) (+2 buffered); 0 inflight rollouts (train=0, eval=0 | math=0, code=0)[0m[0m
+[2m16:40:17[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v3[0m[0m
+[2m16:40:17[0m [1m   INFO[0m [1m[22mResuming dispatcher[0m[0m
+[2m16:40:22[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:22[0m [1m   INFO[0m [1m[22mPausing dispatcher to prevent orchestrator from racing from trainer. Waiting for new policy...[0m[0m
+[2m16:40:22[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 5 |   14.2s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 4 | Error 0.0% | Truncation 51.6%
+		 ╰─ code | Ratio 37.5% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 4 | Error 0.0% | Truncation 29.2%
+		 ╰─ math | Ratio 62.5% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 1 | Error 0.0% | Truncation 65.0%[0m[0m
+[2m16:40:25[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:25[0m [1m   INFO[0m [1m[22mHolding batch 6 until the trainer publishes policy v4 (currently v3)[0m[0m
+[2m16:40:25[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v4[0m[0m
+[2m16:40:25[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 6 |    2.9s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 28.1%
+		 ╰─ code | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 8.3%
+		 ╰─ math | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 53.6%[0m[0m
+[2m16:40:26[0m [1m   INFO[0m [1m[22mTrain batch 24/64 (37.5%) (math=12, code=12) (+1 buffered); 0 inflight rollouts (train=0, eval=0 | math=0, code=0)[0m[0m
+[2m16:40:32[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v5[0m[0m
+[2m16:40:32[0m [1m   INFO[0m [1m[22mResuming dispatcher[0m[0m
+[2m16:40:36[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:36[0m [1m   INFO[0m [1m[22mPausing dispatcher to prevent orchestrator from racing from trainer. Waiting for new policy...[0m[0m
+[2m16:40:36[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 7 |   11.0s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 37.5%
+		 ╰─ code | Ratio 62.5% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 17.5%
+		 ╰─ math | Ratio 37.5% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 70.8%[0m[0m
+[2m16:40:37[0m [1m   INFO[0m [1m[22mTrain batch 0/64 (0.0%) (math=0, code=0) (+6 buffered); 64 inflight rollouts (train=64, eval=0 | math=29, code=35)[0m[0m
+[2m16:40:39[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v6[0m[0m
+[2m16:40:39[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:39[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 8 |    2.9s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 43.8%
+		 ╰─ code | Ratio 62.5% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 15.0%
+		 ╰─ math | Ratio 37.5% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 91.7%[0m[0m
+[2m16:40:44[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v7[0m[0m
+[2m16:40:45[0m [1m   INFO[0m [1m[22mResuming dispatcher[0m[0m
+[2m16:40:47[0m [1m   INFO[0m [1m[22mTrain batch 28/64 (43.8%) (math=20, code=8) (+8 buffered); 64 inflight rollouts (train=64, eval=0 | math=38, code=26)[0m[0m
+[2m16:40:48[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:48[0m [1m   INFO[0m [1m[22mPausing dispatcher to prevent orchestrator from racing from trainer. Waiting for new policy...[0m[0m
+[2m16:40:49[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 9 |    9.6s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 51.6%
+		 ╰─ code | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 17.9%
+		 ╰─ math | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 77.8%[0m[0m
+[2m16:40:51[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:40:51[0m [1m   INFO[0m [1m[22mHolding batch 10 until the trainer publishes policy v8 (currently v7)[0m[0m
+[2m16:40:52[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v8[0m[0m
+[2m16:40:52[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 10 |    2.7s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 46.9%
+		 ╰─ code | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 14.3%
+		 ╰─ math | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 72.2%[0m[0m
+[2m16:40:57[0m [1m   INFO[0m [1m[22mTrain batch 32/64 (50.0%) (math=24, code=8); 0 inflight rollouts (train=0, eval=0 | math=0, code=0)[0m[0m
+[2m16:40:58[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v9[0m[0m
+[2m16:40:58[0m [1m   INFO[0m [1m[22mResuming dispatcher[0m[0m
+[2m16:41:02[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:41:02[0m [1m   INFO[0m [1m[22mPausing dispatcher to prevent orchestrator from racing from trainer. Waiting for new policy...[0m[0m
+[2m16:41:02[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 11 |   11.1s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 42.2%
+		 ╰─ code | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 17.9%
+		 ╰─ math | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 61.1%[0m[0m
+[2m16:41:05[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:41:05[0m [1m   INFO[0m [1m[22mHolding batch 12 until the trainer publishes policy v10 (currently v9)[0m[0m
+[2m16:41:06[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v10[0m[0m
+[2m16:41:06[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 12 |    2.7s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 54.7%
+		 ╰─ code | Ratio 31.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 30.0%
+		 ╰─ math | Ratio 68.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 65.9%[0m[0m
+[2m16:41:07[0m [1m   INFO[0m [1m[22mTrain batch 0/64 (0.0%) (math=0, code=0) (+15 buffered); 0 inflight rollouts (train=0, eval=0 | math=0, code=0)[0m[0m
+[2m16:41:12[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v11[0m[0m
+[2m16:41:12[0m [1m   INFO[0m [1m[22mResuming dispatcher[0m[0m
+[2m16:41:16[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:41:16[0m [1m   INFO[0m [1m[22mPausing dispatcher to prevent orchestrator from racing from trainer. Waiting for new policy...[0m[0m
+[2m16:41:16[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 13 |   11.1s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 43.8%
+		 ╰─ code | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 16.7%
+		 ╰─ math | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 78.6%[0m[0m
+[2m16:41:17[0m [1m   INFO[0m [1m[22mTrain batch 0/64 (0.0%) (math=0, code=0) (+19 buffered); 64 inflight rollouts (train=64, eval=0 | math=23, code=41)[0m[0m
+[2m16:41:18[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:41:18[0m [1m   INFO[0m [1m[22mHolding batch 14 until the trainer publishes policy v12 (currently v11)[0m[0m
+[2m16:41:20[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v12[0m[0m
+[2m16:41:20[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 14 |    2.4s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 28.1%
+		 ╰─ code | Ratio 43.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 3.6%
+		 ╰─ math | Ratio 56.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 2 | Error 0.0% | Truncation 47.2%[0m[0m
+[2m16:41:26[0m [1m   INFO[0m [1m[22mUpdating policy in-flight to v13[0m[0m
+[2m16:41:26[0m [1m   INFO[0m [1m[22mResuming dispatcher[0m[0m
+[2m16:41:27[0m [1m   INFO[0m [1m[22mTrain batch 36/64 (56.2%) (math=16, code=20) (+2 buffered); 64 inflight rollouts (train=64, eval=0 | math=30, code=34)[0m[0m
+[2m16:41:30[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m16:41:30[0m [1m   INFO[0m [1m[22mPausing dispatcher to prevent orchestrator from racing from trainer. Waiting for new policy...[0m[0m
+[2m16:41:30[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 15 |   11.4s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 31.2%
+		 ╰─ code | Ratio 68.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 9.1%
+		 ╰─ math | Ratio 31.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 3 | Error 0.0% | Truncation 80.0%[0m[0m
+[2m16:41:32[0m [1m   INFO[0m [1m[22mDraining pipeline (cancelled 0 in-flight train rollout(s); any in-flight evals will complete)[0m[0m
+[2m16:41:33[0m [1m   INFO[0m [1m[22mPipeline drained, exiting main loop[0m[0m
+[2m16:41:33[0m [32m[1mSUCCESS[0m [32m[1m[22mOrchestrator step loop done in 1m 46s[0m[0m
+[2m16:41:33[0m [1m   INFO[0m [1m[22mZMQ training batch sender closed[0m[0m
+[2m16:41:33[0m [32m[1mSUCCESS[0m [32m[1m[22mOrchestrator finished.[0m[0m
+[2m16:41:43[0m [32m[1mSUCCESS[0m [32m[1m[22mTraining finished![0m[0m

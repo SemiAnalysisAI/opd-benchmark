@@ -1,0 +1,10 @@
+Cloning into '/dev/shm/opd-bench/src/prime-rl/deps/renderers'...
+Cloning into '/dev/shm/opd-bench/src/prime-rl/deps/research-environments'...
+Cloning into '/dev/shm/opd-bench/src/prime-rl/deps/verifiers'...
+Submodule path 'deps/renderers': checked out 'd4707862ac83aa3773c21f4096aec72bd17b91e4'
+Submodule path 'deps/research-environments': checked out 'f9c43a74fe6179381f108575c8a8426a9923eecc'
+Submodule path 'deps/verifiers': checked out 'd30a3f48e5f14b06b3081b2102ec32cc3149b849'
+Using CPython 3.12.3 interpreter at: /usr/bin/python3
+Creating virtual environment at: .venv
+error: Failed to generate package metadata for `prime-pydantic-config @ editable+deps/pydantic-config`
+  Caused by: /dev/shm/opd-bench/src/prime-rl/deps/pydantic-config does not appear to be a Python project, as neither `pyproject.toml` nor `setup.py` are present in the directory

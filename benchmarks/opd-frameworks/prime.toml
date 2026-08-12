@@ -1,0 +1,51 @@
+max_steps = 15
+seq_len = 2048
+
+[model]
+name = "/root/opd-bench/models/student"
+
+[file_monitor]
+
+[orchestrator]
+batch_size = 128
+group_size = 16
+
+[orchestrator.algo]
+type = "opd"
+
+[orchestrator.algo.teacher]
+name = "/root/opd-bench/models/teacher"
+base_url = ["http://localhost:8001/v1"]
+
+[orchestrator.renderer]
+name = "prime-qwen3"
+
+[orchestrator.train.sampling]
+temperature = 1.0
+max_completion_tokens = 128
+
+[[orchestrator.train.source]]
+name = "reverse-text"
+
+[orchestrator.train.source.env.taskset]
+id = "reverse-text-v1"
+
+[orchestrator.train.source.env.agent.harness]
+id = "null"
+
+[orchestrator.train.source.env.agent.runtime]
+type = "subprocess"
+
+[trainer.optim]
+lr = 3e-6
+weight_decay = 0.01
+max_norm = 1.0
+betas1 = 0.9
+betas2 = 0.999
+
+[weight_broadcast]
+type = "filesystem"
+
+[inference]
+gpu_memory_utilization = 0.4
+seed = 42

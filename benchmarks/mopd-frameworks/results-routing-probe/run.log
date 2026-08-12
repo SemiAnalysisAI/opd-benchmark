@@ -1,0 +1,121 @@
+001/64 math:0 r0 tokens=197 specialist_advantage=-0.0350
+002/64 math:0 r1 tokens=249 specialist_advantage=+0.0045
+003/64 math:0 r2 tokens=169 specialist_advantage=-0.0044
+004/64 math:0 r3 tokens=209 specialist_advantage=-0.0698
+005/64 code:0 r0 tokens=195 specialist_advantage=+0.1498
+006/64 code:0 r1 tokens=182 specialist_advantage=+0.2368
+007/64 code:0 r2 tokens=165 specialist_advantage=+0.2170
+008/64 code:0 r3 tokens=250 specialist_advantage=+0.2262
+009/64 math:1 r0 tokens=243 specialist_advantage=-0.3131
+010/64 math:1 r1 tokens=185 specialist_advantage=-0.3121
+011/64 math:1 r2 tokens=219 specialist_advantage=-0.1515
+012/64 math:1 r3 tokens=256 specialist_advantage=-0.1077
+013/64 code:1 r0 tokens=185 specialist_advantage=+0.4532
+014/64 code:1 r1 tokens=179 specialist_advantage=+0.4263
+015/64 code:1 r2 tokens=197 specialist_advantage=+0.5288
+016/64 code:1 r3 tokens=185 specialist_advantage=+0.5561
+017/64 math:2 r0 tokens=127 specialist_advantage=-0.3508
+018/64 math:2 r1 tokens=159 specialist_advantage=-0.0297
+019/64 math:2 r2 tokens=142 specialist_advantage=-0.2595
+020/64 math:2 r3 tokens=5 specialist_advantage=-3.3008
+021/64 code:2 r0 tokens=97 specialist_advantage=+0.2396
+022/64 code:2 r1 tokens=91 specialist_advantage=+0.2173
+023/64 code:2 r2 tokens=120 specialist_advantage=+0.1880
+024/64 code:2 r3 tokens=96 specialist_advantage=+0.9514
+025/64 math:3 r0 tokens=121 specialist_advantage=-0.2990
+026/64 math:3 r1 tokens=212 specialist_advantage=-0.2696
+027/64 math:3 r2 tokens=167 specialist_advantage=-0.2004
+028/64 math:3 r3 tokens=201 specialist_advantage=-0.1317
+029/64 code:3 r0 tokens=146 specialist_advantage=+0.1087
+030/64 code:3 r1 tokens=150 specialist_advantage=+0.1986
+031/64 code:3 r2 tokens=150 specialist_advantage=+0.2130
+032/64 code:3 r3 tokens=150 specialist_advantage=+0.2095
+033/64 math:4 r0 tokens=201 specialist_advantage=-0.2083
+034/64 math:4 r1 tokens=256 specialist_advantage=-0.3411
+035/64 math:4 r2 tokens=256 specialist_advantage=-0.1040
+036/64 math:4 r3 tokens=210 specialist_advantage=-0.2886
+037/64 code:4 r0 tokens=202 specialist_advantage=+0.2796
+038/64 code:4 r1 tokens=170 specialist_advantage=+0.2206
+039/64 code:4 r2 tokens=159 specialist_advantage=+0.2273
+040/64 code:4 r3 tokens=148 specialist_advantage=+0.2050
+041/64 math:5 r0 tokens=202 specialist_advantage=-0.1907
+042/64 math:5 r1 tokens=256 specialist_advantage=-0.1709
+043/64 math:5 r2 tokens=256 specialist_advantage=-0.0109
+044/64 math:5 r3 tokens=256 specialist_advantage=-0.0274
+045/64 code:5 r0 tokens=170 specialist_advantage=+0.6598
+046/64 code:5 r1 tokens=114 specialist_advantage=+0.4603
+047/64 code:5 r2 tokens=138 specialist_advantage=+0.4041
+048/64 code:5 r3 tokens=6 specialist_advantage=+1.5759
+049/64 math:6 r0 tokens=242 specialist_advantage=-0.0592
+050/64 math:6 r1 tokens=256 specialist_advantage=-0.0325
+051/64 math:6 r2 tokens=256 specialist_advantage=-0.1047
+052/64 math:6 r3 tokens=233 specialist_advantage=-0.1182
+053/64 code:6 r0 tokens=187 specialist_advantage=+0.4835
+054/64 code:6 r1 tokens=175 specialist_advantage=+0.4346
+055/64 code:6 r2 tokens=197 specialist_advantage=+0.3846
+056/64 code:6 r3 tokens=184 specialist_advantage=+0.4020
+057/64 math:7 r0 tokens=256 specialist_advantage=-0.1418
+058/64 math:7 r1 tokens=256 specialist_advantage=-0.1332
+059/64 math:7 r2 tokens=256 specialist_advantage=-0.1950
+060/64 math:7 r3 tokens=219 specialist_advantage=-0.1667
+061/64 code:7 r0 tokens=105 specialist_advantage=+0.5314
+062/64 code:7 r1 tokens=105 specialist_advantage=+0.5062
+063/64 code:7 r2 tokens=105 specialist_advantage=+0.5101
+064/64 code:7 r3 tokens=100 specialist_advantage=+0.4980
+{
+  "recipe": {
+    "student_model": "/root/opd-bench/mopd/models/student",
+    "data": "/root/opd-bench/mopd/data/miles_train.jsonl",
+    "prompts_per_domain": 8,
+    "rollouts_per_prompt": 4,
+    "trajectories": 64,
+    "max_new_tokens": 256,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "seed_scheme": "42000 + interleaved_prompt_position*100 + rollout_index"
+  },
+  "domains": {
+    "math": {
+      "trajectories": 32,
+      "prompts": 8,
+      "response_tokens": 6728,
+      "specialist_mean_token_logprob": -0.8687776793225426,
+      "mismatched_mean_token_logprob": -0.7180932532822794,
+      "token_weighted_specialist_advantage": -0.15068442604026328,
+      "mean_trajectory_specialist_advantage": -0.25386037077373763,
+      "prompt_cluster_bootstrap_95pct_ci": [
+        -0.47666545732784293,
+        -0.10825894258583257
+      ],
+      "specialist_win_rate": 0.03125,
+      "mean_sampled_reverse_kl_to_specialist": 0.48541702788072083,
+      "mean_sampled_reverse_kl_to_mismatched": 0.2315566571069832,
+      "truncation_rate": 0.34375
+    },
+    "code": {
+      "trajectories": 32,
+      "prompts": 8,
+      "response_tokens": 4803,
+      "specialist_mean_token_logprob": -0.2596421407015624,
+      "mismatched_mean_token_logprob": -0.6170558590482534,
+      "token_weighted_specialist_advantage": 0.357413718346691,
+      "mean_trajectory_specialist_advantage": 0.4032287513985487,
+      "prompt_cluster_bootstrap_95pct_ci": [
+        0.2796596545988014,
+        0.5336636147423652
+      ],
+      "specialist_win_rate": 1.0,
+      "mean_sampled_reverse_kl_to_specialist": 0.15343635740484982,
+      "mean_sampled_reverse_kl_to_mismatched": 0.5566651088033985,
+      "truncation_rate": 0.0
+    }
+  },
+  "overall": {
+    "trajectories": 64,
+    "response_tokens": 11531,
+    "token_weighted_specialist_advantage": 0.06095336664818884,
+    "specialist_win_rate": 0.515625,
+    "elapsed_seconds": 114.24653458595276
+  },
+  "interpretation": "Positive specialist advantage means the domain-routed policy assigned higher average log probability to the same student response than the other policy. This is a routing-signal probe, not an accuracy metric."
+}

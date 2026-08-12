@@ -1,0 +1,8 @@
+Downloading hf-xet (4.3MiB)
+ Downloaded hf-xet
+Installed 15 packages in 23ms
+warning: The package `huggingface-hub==1.27.0` does not have an extra named `cli`
+Fetching 15 files:   0%|          | 0/15 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 15 files:   7%|▋         | 1/15 [00:00<00:02,  4.71it/s]Fetching 15 files:  33%|███▎      | 5/15 [00:00<00:00, 18.75it/s]Fetching 15 files:  53%|█████▎    | 8/15 [00:00<00:00, 13.27it/s]Fetching 15 files:  60%|██████    | 9/15 [00:20<00:00, 13.27it/s]Fetching 15 files:  67%|██████▋   | 10/15 [00:22<00:17,  3.54s/it]Fetching 15 files:  73%|███████▎  | 11/15 [01:11<00:47, 11.79s/it]Fetching 15 files:  80%|████████  | 12/15 [02:14<01:07, 22.34s/it]Fetching 15 files:  87%|████████▋ | 13/15 [02:17<00:36, 18.02s/it]Fetching 15 files: 100%|██████████| 15/15 [02:23<00:00, 11.99s/it]Fetching 15 files: 100%|██████████| 15/15 [02:23<00:00,  9.56s/it]
+[32m✓ Downloaded[0m
+  path: /dev/shm/opd-bench/models-full/student

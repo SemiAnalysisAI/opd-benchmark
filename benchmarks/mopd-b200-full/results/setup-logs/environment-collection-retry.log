@@ -1,0 +1,5 @@
++ set -euo pipefail
++ bench_root=/dev/shm/opd-bench
++ artifact_root=/dev/shm/opd-bench/artifacts/mopd-b200-full
++ output_dir=/dev/shm/opd-bench/results-full/environment
++ mkdir -p /dev/shm/opd-bench/results-full/environment

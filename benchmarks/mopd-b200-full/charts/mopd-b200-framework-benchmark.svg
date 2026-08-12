@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1040" viewBox="0 0 1800 1040" role="img">
+<title>Full-size MOPD systems benchmark on eight NVIDIA B200 GPUs</title>
+<rect x="0.0" y="0.0" width="1800.0" height="1040.0" rx="0.0" fill="#F4F6F9"/>
+<rect x="66.0" y="34.0" width="214.0" height="34.0" rx="17.0" fill="#E4EDFF"/>
+<text x="173.0" y="57.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="750" fill="#2356AD" text-anchor="middle" letter-spacing="1.3">SYSTEMS BENCHMARK</text>
+<text x="66.0" y="130.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="47" font-weight="780" fill="#10233F" text-anchor="start" letter-spacing="0">MOPD throughput hinges on pipeline balance</text>
+<text x="66.0" y="174.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="22" font-weight="480" fill="#5A687B" text-anchor="start" letter-spacing="0">Same Qwen3-8B recipe across Prime-RL, Miles, and verl · 8× NVIDIA B200</text>
+<text x="1734.0" y="58.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#687587" text-anchor="end" letter-spacing="1.1">AUGUST 2026</text>
+<line x1="66.0" y1="205.0" x2="1734.0" y2="205.0" stroke="#CAD2DD" stroke-width="1.4"/>
+<rect x="66.0" y="238.0" width="530.0" height="650.0" rx="20.0" fill="#FFFFFF" stroke="#DFE5ED" stroke-width="1"/>
+<rect x="635.0" y="238.0" width="530.0" height="650.0" rx="20.0" fill="#FFFFFF" stroke="#DFE5ED" stroke-width="1"/>
+<rect x="1204.0" y="238.0" width="530.0" height="650.0" rx="20.0" fill="#FFFFFF" stroke="#DFE5ED" stroke-width="1"/>
+<text x="96.0" y="285.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="750" fill="#68778A" text-anchor="start" letter-spacing="1.0">REALIZED PIPELINE RATE</text>
+<text x="96.0" y="322.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="24" font-weight="720" fill="#10233F" text-anchor="start" letter-spacing="0">Trajectories per second</text>
+<text x="96.0" y="350.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#718095" text-anchor="start" letter-spacing="0">Higher is better · native step windows</text>
+<text x="665.0" y="285.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="750" fill="#68778A" text-anchor="start" letter-spacing="1.0">PRODUCER / CONSUMER BALANCE</text>
+<text x="665.0" y="322.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="24" font-weight="720" fill="#10233F" text-anchor="start" letter-spacing="0">Mean seconds per step</text>
+<text x="665.0" y="350.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#718095" text-anchor="start" letter-spacing="0">Native timers · async Prime stages overlap</text>
+<text x="1234.0" y="285.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="750" fill="#68778A" text-anchor="start" letter-spacing="1.0">END-TO-END WALL</text>
+<text x="1234.0" y="322.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="24" font-weight="720" fill="#10233F" text-anchor="start" letter-spacing="0">Cold start + framework</text>
+<text x="1234.0" y="350.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#718095" text-anchor="start" letter-spacing="0">Lower is better · seconds</text>
+<line x1="235.0" y1="385.0" x2="235.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="235.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">0</text>
+<line x1="310.0" y1="385.0" x2="310.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="310.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">0.75</text>
+<line x1="385.0" y1="385.0" x2="385.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="385.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">1.5</text>
+<line x1="460.0" y1="385.0" x2="460.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="460.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">2.25</text>
+<line x1="535.0" y1="385.0" x2="535.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="535.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">3</text>
+<text x="96.0" y="425.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">Prime-RL</text>
+<text x="96.0" y="447.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#7B8797" text-anchor="start" letter-spacing="0">vLLM + native trainer</text>
+<rect x="235.0" y="404.0" width="300.0" height="49.0" rx="7.0" fill="#EDF1F5"/>
+<rect x="235.0" y="404.0" width="216.8" height="49.0" rx="7.0" fill="#E8752B"/>
+<text x="461.8" y="435.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="17" font-weight="760" fill="#10233F" text-anchor="start" letter-spacing="0">2.17</text>
+<text x="235.0" y="476.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#69788C" text-anchor="start" letter-spacing="0">4,778 trained tok/s</text>
+<text x="96.0" y="571.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">Miles</text>
+<text x="96.0" y="593.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#7B8797" text-anchor="start" letter-spacing="0">SGLang + Megatron</text>
+<rect x="235.0" y="550.0" width="300.0" height="49.0" rx="7.0" fill="#EDF1F5"/>
+<rect x="235.0" y="550.0" width="119.2" height="49.0" rx="7.0" fill="#7759D9"/>
+<text x="364.2" y="581.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="17" font-weight="760" fill="#10233F" text-anchor="start" letter-spacing="0">1.19</text>
+<text x="235.0" y="622.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#69788C" text-anchor="start" letter-spacing="0">2,628 trained tok/s</text>
+<text x="96.0" y="717.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">verl</text>
+<text x="96.0" y="739.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="11" font-weight="400" fill="#7B8797" text-anchor="start" letter-spacing="0">vLLM + FSDP</text>
+<rect x="235.0" y="696.0" width="300.0" height="49.0" rx="7.0" fill="#EDF1F5"/>
+<rect x="235.0" y="696.0" width="138.7" height="49.0" rx="7.0" fill="#2875E2"/>
+<text x="383.7" y="727.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="17" font-weight="760" fill="#10233F" text-anchor="start" letter-spacing="0">1.39</text>
+<text x="235.0" y="768.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#69788C" text-anchor="start" letter-spacing="0">2,677 trained tok/s</text>
+<line x1="815.0" y1="385.0" x2="815.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="815.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">0</text>
+<line x1="886.5" y1="385.0" x2="886.5" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="886.5" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">12.5</text>
+<line x1="958.0" y1="385.0" x2="958.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="958.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">25</text>
+<line x1="1029.5" y1="385.0" x2="1029.5" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="1029.5" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">37.5</text>
+<line x1="1101.0" y1="385.0" x2="1101.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="1101.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">50</text>
+<rect x="872.0" y="365.0" width="14.0" height="14.0" rx="3.0" fill="#2D6AA8"/>
+<text x="894.0" y="377.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#647388" text-anchor="start" letter-spacing="0">generation cadence</text>
+<rect x="1010.0" y="365.0" width="14.0" height="14.0" rx="3.0" fill="#9DB8D2"/>
+<text x="1032.0" y="377.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#647388" text-anchor="start" letter-spacing="0">trainer + sync</text>
+<text x="665.0" y="433.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">Prime-RL</text>
+<rect x="815.0" y="404.0" width="168.9" height="20.0" rx="5.0" fill="#2D6AA8"/>
+<rect x="815.0" y="433.0" width="175.0" height="20.0" rx="5.0" fill="#9DB8D2"/>
+<text x="991.9" y="420.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="680" fill="#10233F" text-anchor="start" letter-spacing="0">29.5s</text>
+<text x="998.0" y="449.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="680" fill="#10233F" text-anchor="start" letter-spacing="0">30.6s</text>
+<text x="665.0" y="579.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">Miles</text>
+<rect x="815.0" y="550.0" width="232.9" height="20.0" rx="5.0" fill="#2D6AA8"/>
+<rect x="815.0" y="579.0" width="53.8" height="20.0" rx="5.0" fill="#9DB8D2"/>
+<text x="1055.9" y="566.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="680" fill="#10233F" text-anchor="start" letter-spacing="0">40.7s</text>
+<text x="876.8" y="595.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="680" fill="#10233F" text-anchor="start" letter-spacing="0">9.4s</text>
+<text x="665.0" y="725.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">verl</text>
+<rect x="815.0" y="696.0" width="205.3" height="20.0" rx="5.0" fill="#2D6AA8"/>
+<rect x="815.0" y="725.0" width="53.1" height="20.0" rx="5.0" fill="#9DB8D2"/>
+<text x="1028.3" y="712.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="680" fill="#10233F" text-anchor="start" letter-spacing="0">35.9s</text>
+<text x="876.1" y="741.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="680" fill="#10233F" text-anchor="start" letter-spacing="0">9.3s</text>
+<line x1="1385.0" y1="385.0" x2="1385.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="1385.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">0</text>
+<line x1="1456.2" y1="385.0" x2="1456.2" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="1456.2" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">250</text>
+<line x1="1527.5" y1="385.0" x2="1527.5" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="1527.5" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">500</text>
+<line x1="1598.8" y1="385.0" x2="1598.8" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="1598.8" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">750</text>
+<line x1="1670.0" y1="385.0" x2="1670.0" y2="790.0" stroke="#DDE3EB" stroke-width="1" stroke-dasharray="4 7"/>
+<text x="1670.0" y="820.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="400" fill="#7A8798" text-anchor="middle" letter-spacing="0">1000</text>
+<rect x="1428.0" y="365.0" width="14.0" height="14.0" rx="3.0" fill="#D5DDE7"/>
+<text x="1450.0" y="377.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#647388" text-anchor="start" letter-spacing="0">teacher/startup</text>
+<rect x="1571.0" y="365.0" width="14.0" height="14.0" rx="3.0" fill="#416F9B"/>
+<text x="1593.0" y="377.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#647388" text-anchor="start" letter-spacing="0">framework</text>
+<text x="1234.0" y="433.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">Prime-RL</text>
+<rect x="1385.0" y="404.0" width="17.7" height="49.0" rx="7.0" fill="#D5DDE7"/>
+<rect x="1402.7" y="404.0" width="170.7" height="49.0" rx="7.0" fill="#E8752B"/>
+<text x="1581.4" y="435.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="16" font-weight="760" fill="#10233F" text-anchor="start" letter-spacing="0">661s</text>
+<text x="1234.0" y="579.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">Miles</text>
+<rect x="1385.0" y="550.0" width="13.7" height="49.0" rx="7.0" fill="#D5DDE7"/>
+<rect x="1398.7" y="550.0" width="248.5" height="49.0" rx="7.0" fill="#7759D9"/>
+<text x="1655.2" y="581.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="16" font-weight="760" fill="#10233F" text-anchor="start" letter-spacing="0">920s</text>
+<text x="1234.0" y="725.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="18" font-weight="730" fill="#10233F" text-anchor="start" letter-spacing="0">verl</text>
+<rect x="1385.0" y="696.0" width="12.3" height="49.0" rx="7.0" fill="#D5DDE7"/>
+<rect x="1397.3" y="696.0" width="231.7" height="49.0" rx="7.0" fill="#2875E2"/>
+<text x="1637.0" y="727.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="16" font-weight="760" fill="#10233F" text-anchor="start" letter-spacing="0">856s</text>
+<rect x="96.0" y="848.0" width="470.0" height="26.0" rx="8.0" fill="#EFF4FB"/>
+<text x="112.0" y="866.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#294969" text-anchor="start" letter-spacing="0">Highest realized rate: Prime-RL · 2.17 traj/s</text>
+<rect x="665.0" y="848.0" width="470.0" height="26.0" rx="8.0" fill="#EFF4FB"/>
+<text x="681.0" y="866.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#294969" text-anchor="start" letter-spacing="0">Generation dominates Miles/verl; Prime nearly matches stages</text>
+<rect x="1234.0" y="848.0" width="470.0" height="26.0" rx="8.0" fill="#EFF4FB"/>
+<text x="1250.0" y="866.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="13" font-weight="700" fill="#294969" text-anchor="start" letter-spacing="0">Wall includes cold teacher and framework initialization</text>
+<line x1="66.0" y1="926.0" x2="1734.0" y2="926.0" stroke="#CAD2DD" stroke-width="1.3"/>
+<text x="66.0" y="962.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="15" font-weight="570" fill="#56667A" text-anchor="start" letter-spacing="0">Qwen3-8B student · Qwen3-32B math + Qwen3-Coder-30B-A3B teachers · 15 steps · 960 real trajectories</text>
+<text x="66.0" y="992.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="400" fill="#758296" text-anchor="start" letter-spacing="0">Sampled-token reverse KL · 16K response cap · one run per framework · no model-quality claim</text>
+<text x="1734.0" y="962.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="14" font-weight="620" fill="#647388" text-anchor="end" letter-spacing="0">8× B200 · source: reproducible benchmark logs</text>
+<text x="1734.0" y="992.0" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="400" fill="#8994A3" text-anchor="end" letter-spacing="0">SemiAnalysis OPD systems benchmark · August 2026</text>
+</svg>

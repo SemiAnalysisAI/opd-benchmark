@@ -1,0 +1,8 @@
+[transformers] kernels hub usage is disabled through the environment USE_HUB_KERNELS=NO
+/dev/shm/opd-bench/src/prime-rl/.venv/lib/python3.12/site-packages/torch/_dynamo/variables/functions.py:2202: UserWarning: Dynamo detected a call to a `functools.lru_cache`-wrapped function at 'norms.py:37'. Dynamo ignores the cache wrapper and directly traces the wrapped function. Silent incorrectness is only a *potential* risk, not something we have observed. Enable TORCH_LOGS=+dynamo for a DEBUG stack trace.
+
+This call originates from:
+  File "/dev/shm/opd-bench/src/prime-rl/src/prime_rl/trainer/models/layers/norms.py", line 37, in forward
+    quack_fn = _get_quack_rmsnorm() if hidden_states.is_cuda else None
+
+  torch._dynamo.utils.warn_once(msg)

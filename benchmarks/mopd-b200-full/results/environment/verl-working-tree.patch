@@ -1,0 +1,238 @@
+diff --git a/verl/experimental/teacher_loop/teacher_model.py b/verl/experimental/teacher_loop/teacher_model.py
+index dcb06ca0..57d4746a 100644
+--- a/verl/experimental/teacher_loop/teacher_model.py
++++ b/verl/experimental/teacher_loop/teacher_model.py
+@@ -13,9 +13,11 @@
+ # limitations under the License.
+ 
+ import asyncio
++import json
+ import logging
+ import os
+ 
++import aiohttp
+ from omegaconf import DictConfig, OmegaConf
+ 
+ from verl.single_controller.ray.base import RayResourcePool, split_resource_pool
+@@ -23,7 +25,7 @@ from verl.utils.config import omega_conf_to_dataclass
+ from verl.utils.ray_utils import auto_await
+ from verl.workers.config import DistillationConfig, DistillationTeacherModelConfig
+ from verl.workers.rollout.llm_server import LLMServerClient
+-from verl.workers.rollout.replica import get_rollout_replica_class
++from verl.workers.rollout.replica import TokenOutput, get_rollout_replica_class
+ 
+ logger = logging.getLogger(__file__)
+ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
+@@ -211,3 +213,102 @@ class MultiTeacherModelManager:
+                 load_balancer_handle=manager.load_balancer_handle,
+             )
+         return teacher_clients
++
++
++class ExternalSGLangTeacherClient:
++    """Minimal serializable client for a pre-launched SGLang teacher."""
++
++    def __init__(self, key: str, url: str):
++        self.key = key
++        self.url = url
++
++    async def generate(
++        self,
++        request_id,
++        *,
++        prompt_ids,
++        sampling_params,
++        image_data=None,
++        video_data=None,
++        audio_data=None,
++        mm_processor_kwargs=None,
++        **kwargs,
++    ):
++        del video_data, audio_data, mm_processor_kwargs, kwargs
++        logger.warning(
++            "external_teacher_route key=%s tokens=%d",
++            self.key,
++            len(prompt_ids),
++        )
++        params = dict(sampling_params)
++        prompt_logprobs = params.pop("prompt_logprobs", None)
++        if "max_tokens" in params:
++            params["max_new_tokens"] = params.pop("max_tokens")
++        request = {
++            "rid": request_id,
++            "input_ids": list(prompt_ids),
++            "sampling_params": params,
++            "return_logprob": prompt_logprobs is not None,
++            "image_data": image_data,
++        }
++        if prompt_logprobs is not None:
++            request["logprob_start_len"] = 0
++            if prompt_logprobs > 0:
++                request["top_logprobs_num"] = prompt_logprobs
++
++        timeout = aiohttp.ClientTimeout(total=600)
++        async with aiohttp.ClientSession(timeout=timeout) as session:
++            async with session.post(self.url, json=request) as response:
++                response.raise_for_status()
++                output = await response.json()
++
++        extra_fields = {}
++        if prompt_logprobs is not None:
++            meta_info = output.get("meta_info", {})
++            input_token_logprobs = meta_info.get("input_token_logprobs") or []
++            if prompt_logprobs > 0:
++                input_top_logprobs = meta_info.get("input_top_logprobs") or []
++            teacher_ids = []
++            teacher_logprobs = []
++            for position in range(1, len(input_token_logprobs)):
++                if prompt_logprobs == 0:
++                    logprob, token_id, _ = input_token_logprobs[position]
++                    teacher_ids.append([int(token_id)])
++                    teacher_logprobs.append([float(logprob)])
++                else:
++                    entries = input_top_logprobs[position]
++                    teacher_ids.append([int(token_id) for _, token_id, _ in entries])
++                    teacher_logprobs.append([float(logprob) for logprob, _, _ in entries])
++            width = max(prompt_logprobs, 1)
++            teacher_ids.append([0] * width)
++            teacher_logprobs.append([0.0] * width)
++            if len(teacher_ids) != len(prompt_ids):
++                raise ValueError(
++                    f"SGLang returned {len(teacher_ids)} prompt positions for {len(prompt_ids)} input IDs"
++                )
++            extra_fields["prompt_ids"] = teacher_ids
++            extra_fields["prompt_logprobs"] = teacher_logprobs
++
++        return TokenOutput(
++            token_ids=list(output.get("output_ids", [])),
++            log_probs=None,
++            stop_reason=(output.get("meta_info", {}).get("finish_reason") or {}).get("type"),
++            extra_fields=extra_fields,
++        )
++
++
++class ExternalMultiTeacherModelManager:
++    """Opt-in two-GPU benchmark adapter using external SGLang endpoints."""
++
++    def __init__(self, config: DictConfig):
++        self.config = config
++        self.distillation_config: DistillationConfig = omega_conf_to_dataclass(config.distillation)
++        urls = json.loads(os.environ["VERL_EXTERNAL_TEACHER_URLS"])
++        expected = set(self.distillation_config.teacher_models)
++        if set(urls) != expected:
++            raise ValueError(f"external teacher URL keys {sorted(urls)} != configured keys {sorted(expected)}")
++        self.urls = urls
++        logger.warning("Using externally managed MOPD teachers: %s", sorted(urls))
++
++    def get_client(self):
++        return {key: ExternalSGLangTeacherClient(key, url) for key, url in self.urls.items()}
+diff --git a/verl/trainer/main_ppo_v0.py b/verl/trainer/main_ppo_v0.py
+index bf2a59ef..3d6429e1 100644
+--- a/verl/trainer/main_ppo_v0.py
++++ b/verl/trainer/main_ppo_v0.py
+@@ -85,7 +85,7 @@ class BaseTaskRunner:
+             config.reward.reward_model.n_gpus_per_node = config.trainer.n_gpus_per_node
+ 
+         distillation_config = config.get("distillation")
+-        if is_distillation_enabled(distillation_config):
++        if is_distillation_enabled(distillation_config) and not os.getenv("VERL_EXTERNAL_TEACHER_URLS"):
+             if distillation_config.n_gpus_per_node <= 0:
+                 raise ValueError("config.distillation.n_gpus_per_node must be greater than 0")
+             if distillation_config.nnodes <= 0:
+@@ -115,7 +115,9 @@ class BaseTaskRunner:
+         """Add teacher model worker if enabled."""
+         from verl.trainer.ppo.ray_trainer import Role
+ 
+-        if is_distillation_enabled(config.get("distillation")):
++        if is_distillation_enabled(config.get("distillation")) and not os.getenv(
++            "VERL_EXTERNAL_TEACHER_URLS"
++        ):
+             # we do not use teacher model workers, so we only register teacher model in resource pool
+             # without registering a teacher model worker in role-worker mapping
+             self.mapping[Role.TeacherModel] = "teacher_pool"
+diff --git a/verl/trainer/ppo/padding_utils.py b/verl/trainer/ppo/padding_utils.py
+index 436e17bc..cee431b0 100644
+--- a/verl/trainer/ppo/padding_utils.py
++++ b/verl/trainer/ppo/padding_utils.py
+@@ -112,6 +112,17 @@ def construct_minimal_padding_template(
+         rm_scores=torch.zeros_like(response_mask, dtype=torch.float32),
+         rollout_log_probs=torch.zeros_like(response_mask, dtype=torch.float32),
+     )
++    # MOPD adds full-sequence teacher fields after generation.  The stock
++    # padding helper clones them from a real sample, leaving their ragged
++    # length inconsistent with this two-token no-op sequence.
++    for field_name in ("teacher_logprobs", "teacher_ids"):
++        field = template_sample.get(field_name)
++        if isinstance(field, torch.Tensor):
++            template_sample[field_name] = torch.zeros(
++                (input_ids.size(0), *field.shape[1:]),
++                dtype=field.dtype,
++                device=field.device,
++            )
+     if "multi_modal_inputs" in template_sample:
+         template_sample["multi_modal_inputs"] = {}
+     if routed_experts is not None:
+diff --git a/verl/trainer/ppo/ray_trainer.py b/verl/trainer/ppo/ray_trainer.py
+index 908d36b2..0efe68c8 100644
+--- a/verl/trainer/ppo/ray_trainer.py
++++ b/verl/trainer/ppo/ray_trainer.py
+@@ -924,13 +924,18 @@ class RayPPOTrainer:
+ 
+         # initialize teacher loop manager
+         if self.use_teacher_policy:
+-            from verl.experimental.teacher_loop import MultiTeacherModelManager
++            if os.getenv("VERL_EXTERNAL_TEACHER_URLS"):
++                from verl.experimental.teacher_loop.teacher_model import ExternalMultiTeacherModelManager
+ 
+-            teacher_resource_pool = self.resource_pool_manager.get_resource_pool(Role.TeacherModel)
+-            self.teacher_model_manager = MultiTeacherModelManager(
+-                config=self.config,
+-                resource_pool=teacher_resource_pool,
+-            )
++                self.teacher_model_manager = ExternalMultiTeacherModelManager(config=self.config)
++            else:
++                from verl.experimental.teacher_loop import MultiTeacherModelManager
++
++                teacher_resource_pool = self.resource_pool_manager.get_resource_pool(Role.TeacherModel)
++                self.teacher_model_manager = MultiTeacherModelManager(
++                    config=self.config,
++                    resource_pool=teacher_resource_pool,
++                )
+             self.distillation_config: DistillationConfig = omega_conf_to_dataclass(self.config.distillation)
+         else:
+             self.teacher_model_manager = None
+diff --git a/verl/trainer/ppo/v1/trainer_base.py b/verl/trainer/ppo/v1/trainer_base.py
+index 9a0d3759..513a9a96 100644
+--- a/verl/trainer/ppo/v1/trainer_base.py
++++ b/verl/trainer/ppo/v1/trainer_base.py
+@@ -337,11 +337,16 @@ class PPOTrainer(ABC):
+ 
+         # 8. initialize teacher loop manager
+         if self.use_teacher_policy:
+-            teacher_resource_pool = self.resource_pool_manager.get_resource_pool(Role.TeacherModel)
+-            self.teacher_model_manager = MultiTeacherModelManager(
+-                config=self.config,
+-                resource_pool=teacher_resource_pool,
+-            )
++            if os.getenv("VERL_EXTERNAL_TEACHER_URLS"):
++                from verl.experimental.teacher_loop.teacher_model import ExternalMultiTeacherModelManager
++
++                self.teacher_model_manager = ExternalMultiTeacherModelManager(config=self.config)
++            else:
++                teacher_resource_pool = self.resource_pool_manager.get_resource_pool(Role.TeacherModel)
++                self.teacher_model_manager = MultiTeacherModelManager(
++                    config=self.config,
++                    resource_pool=teacher_resource_pool,
++                )
+             self.distillation_config: DistillationConfig = omega_conf_to_dataclass(self.config.distillation)
+         else:
+             self.teacher_model_manager = None
+@@ -774,7 +779,7 @@ class PPOTrainer(ABC):
+             self.mapping[Role.RewardModel] = "global_pool"
+ 
+         distillation_config = config.get("distillation")
+-        if is_distillation_enabled(distillation_config):
++        if is_distillation_enabled(distillation_config) and not os.getenv("VERL_EXTERNAL_TEACHER_URLS"):
+             if distillation_config.n_gpus_per_node <= 0:
+                 raise ValueError("config.distillation.n_gpus_per_node must be greater than 0")
+             if distillation_config.nnodes <= 0:

@@ -1,0 +1,51 @@
+[transformers] kernels hub usage is disabled through the environment USE_HUB_KERNELS=NO
+[2m20:38:56[0m [1m   INFO[0m [1m[22mStarting orchestrator (algorithm: opd)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mSetting default executor to ThreadPoolExecutor(max_workers=64)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mInitializing tokenizer (name='/dev/shm/opd-bench/models-full/student' trust_remote_code=False chat_template=None)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mInitializing policy inference pool (base_url=http://localhost:8000/v1, model=/dev/shm/opd-bench/models-full/student)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mInitialized DefaultRenderer for /dev/shm/opd-bench/models-full/student[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mUsing direct renderer rollout client[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mInitializing monitor (wandb=None, prime_monitor=None)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mLogging metrics to /dev/shm/opd-bench/runs-full/prime-smoke3-no-zero-filter/output/run_default/metrics.jsonl[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mConfigured 3 pre-batch rollout filter(s):[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22m  Monitoring gibberish filter (type=gibberish, enforce=False, token_id_threshold=100000, logprob_offset=2.0)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22m  Monitoring repetition filter (type=repetition, enforce=False, window=3000, prob_threshold=0.99)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22m  Monitoring zero_advantage filter (type=zero_advantage, enforce=False)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mConfigured 3 post-batch rollout filter(s):[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22m  Monitoring gibberish filter (type=gibberish, enforce=False, token_id_threshold=100000, logprob_offset=2.0)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22m  Monitoring repetition filter (type=repetition, enforce=False, window=3000, prob_threshold=0.99)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22m  Monitoring zero_advantage filter (type=zero_advantage, enforce=False)[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mLoading training environments[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mEnv math ready: num_tasks=128 group_scoring=False[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mEnv code ready: num_tasks=128 group_scoring=False[0m[0m
+[2m20:38:56[0m [32m[1mSUCCESS[0m [32m[1m[22mTrain environment(s) ready[0m[0m
+[2m20:38:56[0m [1m   INFO[0m [1m[22mWaiting for policy inference pool to be ready[0m[0m
+[2m20:39:06[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 10 seconds (Error: All connection attempts failed) on http://localhost:8100[0m[0m
+[2m20:39:06[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 10 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m20:39:16[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 20 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m20:39:16[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 20 seconds (Error: All connection attempts failed) on http://localhost:8100[0m[0m
+[2m20:39:26[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 30 seconds (Error: All connection attempts failed) on http://localhost:8100[0m[0m
+[2m20:39:26[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 30 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m20:39:36[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 40 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m20:39:36[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 40 seconds (Error: All connection attempts failed) on http://localhost:8100[0m[0m
+[2m20:39:46[0m [33m[1mWARNING[0m [33m[1m[22mInference server was not reached after 50 seconds (Error: All connection attempts failed) on http://localhost:8000[0m[0m
+[2m20:39:49[0m [32m[1mSUCCESS[0m [32m[1m[22mPolicy inference pool ready[0m[0m
+[2m20:39:49[0m [1m   INFO[0m [1m[22mInitializing frozen model pool (model=/dev/shm/opd-bench/models-full/math-teacher, base_url=http://localhost:8001/v1)[0m[0m
+[2m20:39:49[0m [1m   INFO[0m [1m[22mInitializing frozen model pool (model=/dev/shm/opd-bench/models-full/code-teacher, base_url=http://localhost:8002/v1)[0m[0m
+[2m20:39:49[0m [1m   INFO[0m [1m[22mInitializing weight broadcast (type='filesystem')[0m[0m
+[2m20:39:49[0m [1m   INFO[0m [1m[22mInitializing training batch sender (type='zmq' host='localhost' port=5555 hwm=10)[0m[0m
+[2m20:39:49[0m [1m   INFO[0m [1m[22mZMQ training batch sender initialized: output_dir=/dev/shm/opd-bench/runs-full/prime-smoke3-no-zero-filter/output/run_default endpoint=tcp://localhost:5555 hwm=10[0m[0m
+[2m20:39:49[0m [1m   INFO[0m [1m[22mTraining from scratch[0m[0m
+[2m20:39:49[0m [1m   INFO[0m [1m[22mStarting orchestrator loop (max_steps=1)[0m[0m
+[2m20:39:59[0m [1m   INFO[0m [1m[22mTrain batch 36/64 (56.2%) (math=28, code=8) (+4 buffered); 64 inflight rollouts (train=64, eval=0 | math=26, code=38)[0m[0m
+[2m20:40:05[0m [33m[1mWARNING[0m [33m[1m[22mOnly 0/64 effective rollouts are trainable (0.0%) — consider reviewing task difficulty / filter config[0m[0m
+[2m20:40:05[0m [32m[1mSUCCESS[0m [32m[1m[22mStep 1 |   16.5s | Reward 0.0000 | Trainable 0/64 (0.0%) | Turns 1.0 | Branches 1.0 | Max Off-Policy 0 | Error 0.0% | Truncation 0.0%
+		 ╰─ code | Ratio 31.2% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 0 | Error 0.0% | Truncation 0.0%
+		 ╰─ math | Ratio 68.8% | Reward 0.0000 | Turns 1.0 | Branches 1.0 | Max Off-Policy 0 | Error 0.0% | Truncation 0.0%[0m[0m
+[2m20:40:09[0m [1m   INFO[0m [1m[22mTrain batch 16/64 (25.0%) (math=8, code=8) (+1 buffered); 64 inflight rollouts (train=64, eval=0 | math=16, code=48)[0m[0m
+[2m20:40:19[0m [1m   INFO[0m [1m[22mTrain batch 52/64 (81.2%) (math=16, code=36) (+19 buffered); 64 inflight rollouts (train=64, eval=0 | math=31, code=33)[0m[0m
+[2m20:40:20[0m [1m   INFO[0m [1m[22mDraining pipeline (cancelled 64 in-flight train rollout(s); any in-flight evals will complete)[0m[0m
+[2m20:40:20[0m [1m   INFO[0m [1m[22mPipeline drained, exiting main loop[0m[0m
+[2m20:40:20[0m [32m[1mSUCCESS[0m [32m[1m[22mOrchestrator step loop done in 31.6s[0m[0m
+[2m20:40:20[0m [1m   INFO[0m [1m[22mZMQ training batch sender closed[0m[0m
+[2m20:40:20[0m [32m[1mSUCCESS[0m [32m[1m[22mOrchestrator finished.[0m[0m

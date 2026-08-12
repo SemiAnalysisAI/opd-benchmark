@@ -1,0 +1,20 @@
+diff --git a/verl/trainer/ppo/padding_utils.py b/verl/trainer/ppo/padding_utils.py
+--- a/verl/trainer/ppo/padding_utils.py
++++ b/verl/trainer/ppo/padding_utils.py
+@@ -107,5 +107,16 @@ def construct_minimal_padding_template(
+         rollout_log_probs=torch.zeros_like(response_mask, dtype=torch.float32),
+     )
++    # MOPD adds full-sequence teacher fields after generation.  The stock
++    # padding helper clones them from a real sample, leaving their ragged
++    # length inconsistent with this two-token no-op sequence.
++    for field_name in ("teacher_logprobs", "teacher_ids"):
++        field = template_sample.get(field_name)
++        if isinstance(field, torch.Tensor):
++            template_sample[field_name] = torch.zeros(
++                (input_ids.size(0), *field.shape[1:]),
++                dtype=field.dtype,
++                device=field.device,
++            )
+     if "multi_modal_inputs" in template_sample:
+         template_sample["multi_modal_inputs"] = {}
+     if routed_experts is not None:

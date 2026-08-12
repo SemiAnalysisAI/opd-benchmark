@@ -1,0 +1,57 @@
+{
+  "recipe": {
+    "student_model": "/root/opd-bench/mopd/models/student",
+    "data": "/root/opd-bench/mopd/data/miles_train.jsonl",
+    "prompts_per_domain": 8,
+    "rollouts_per_prompt": 4,
+    "trajectories": 64,
+    "max_new_tokens": 256,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "seed_scheme": "42000 + interleaved_prompt_position*100 + rollout_index"
+  },
+  "domains": {
+    "math": {
+      "trajectories": 32,
+      "prompts": 8,
+      "response_tokens": 6728,
+      "specialist_mean_token_logprob": -0.8687776793225426,
+      "mismatched_mean_token_logprob": -0.7180932532822794,
+      "token_weighted_specialist_advantage": -0.15068442604026328,
+      "mean_trajectory_specialist_advantage": -0.25386037077373763,
+      "prompt_cluster_bootstrap_95pct_ci": [
+        -0.47666545732784293,
+        -0.10825894258583257
+      ],
+      "specialist_win_rate": 0.03125,
+      "mean_sampled_reverse_kl_to_specialist": 0.48541702788072083,
+      "mean_sampled_reverse_kl_to_mismatched": 0.2315566571069832,
+      "truncation_rate": 0.34375
+    },
+    "code": {
+      "trajectories": 32,
+      "prompts": 8,
+      "response_tokens": 4803,
+      "specialist_mean_token_logprob": -0.2596421407015624,
+      "mismatched_mean_token_logprob": -0.6170558590482534,
+      "token_weighted_specialist_advantage": 0.357413718346691,
+      "mean_trajectory_specialist_advantage": 0.4032287513985487,
+      "prompt_cluster_bootstrap_95pct_ci": [
+        0.2796596545988014,
+        0.5336636147423652
+      ],
+      "specialist_win_rate": 1.0,
+      "mean_sampled_reverse_kl_to_specialist": 0.15343635740484982,
+      "mean_sampled_reverse_kl_to_mismatched": 0.5566651088033985,
+      "truncation_rate": 0.0
+    }
+  },
+  "overall": {
+    "trajectories": 64,
+    "response_tokens": 11531,
+    "token_weighted_specialist_advantage": 0.06095336664818884,
+    "specialist_win_rate": 0.515625,
+    "elapsed_seconds": 114.24653458595276
+  },
+  "interpretation": "Positive specialist advantage means the domain-routed policy assigned higher average log probability to the same student response than the other policy. This is a routing-signal probe, not an accuracy metric."
+}

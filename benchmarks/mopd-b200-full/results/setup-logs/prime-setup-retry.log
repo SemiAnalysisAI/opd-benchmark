@@ -1,0 +1,36 @@
+Synchronizing submodule url for 'deps/pydantic-config'
+Synchronizing submodule url for 'deps/renderers'
+Synchronizing submodule url for 'deps/research-environments'
+Synchronizing submodule url for 'deps/verifiers'
+Cloning into '/dev/shm/opd-bench/src/prime-rl/deps/renderers'...
+Host key verification failed.
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+fatal: clone of 'git@github.com:PrimeIntellect-ai/renderers.git' into submodule path '/dev/shm/opd-bench/src/prime-rl/deps/renderers' failed
+Failed to clone 'deps/renderers'. Retry scheduled
+Cloning into '/dev/shm/opd-bench/src/prime-rl/deps/research-environments'...
+Host key verification failed.
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+fatal: clone of 'git@github.com:PrimeIntellect-ai/research-environments.git' into submodule path '/dev/shm/opd-bench/src/prime-rl/deps/research-environments' failed
+Failed to clone 'deps/research-environments'. Retry scheduled
+Cloning into '/dev/shm/opd-bench/src/prime-rl/deps/verifiers'...
+Host key verification failed.
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+fatal: clone of 'git@github.com:PrimeIntellect-ai/verifiers.git' into submodule path '/dev/shm/opd-bench/src/prime-rl/deps/verifiers' failed
+Failed to clone 'deps/verifiers'. Retry scheduled
+Cloning into '/dev/shm/opd-bench/src/prime-rl/deps/renderers'...
+Host key verification failed.
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+fatal: clone of 'git@github.com:PrimeIntellect-ai/renderers.git' into submodule path '/dev/shm/opd-bench/src/prime-rl/deps/renderers' failed
+Failed to clone 'deps/renderers' a second time, aborting
