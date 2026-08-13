@@ -1,0 +1,1 @@
+../../../benchmarks/mopd-frameworks/run_all.sh

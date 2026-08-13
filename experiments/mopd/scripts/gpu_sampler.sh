@@ -1,0 +1,1 @@
+../../../benchmarks/mopd-frameworks/gpu_sampler.sh
