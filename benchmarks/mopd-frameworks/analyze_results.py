@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reduce native Prime-RL, Miles, and verl logs to one comparable summary."""
+"""Reduce native Prime-RL, Miles, verl, and optional Slime logs."""
 
 from __future__ import annotations
 
@@ -249,6 +249,92 @@ def parse_miles(run_dir: Path) -> dict[str, Any]:
     return summary
 
 
+def parse_slime(run_dir: Path) -> dict[str, Any]:
+    summary = common_summary(run_dir)
+    text = (run_dir / "run.log").read_text(encoding="utf-8", errors="replace")
+    train = literal_records(
+        text, re.compile(r"model\.py:\d+ - step (\d+): (\{[^\n]+\})")
+    )
+    perf = literal_records(
+        text, re.compile(r"train_metric_utils\.py:\d+ - perf (\d+): (\{[^\n]+\})")
+    )
+    rollout = literal_records(
+        text, re.compile(r"rollout\.py:\d+ - perf (\d+): (\{[^\n]+\})")
+    )
+    expected_steps = int(summary["wall"].get("steps", 15))
+    if not (len(train) == len(perf) == len(rollout) == expected_steps):
+        raise ValueError(
+            f"Slime expected {expected_steps} records, got train={len(train)} "
+            f"perf={len(perf)} rollout={len(rollout)}"
+        )
+
+    step_times = [float(row["perf/step_time"]) for row in perf]
+    token_counts = [
+        float(row["perf/actor_train_tok_per_s"]) * float(row["perf/actor_train_time"])
+        for row in perf
+    ]
+    reverse_kl = [
+        mean(
+            [
+                float(row["train/mopd_reverse_kl/math"]),
+                float(row["train/mopd_reverse_kl/code"]),
+            ]
+        )
+        for row in train
+    ]
+    loss = [float(row["train/loss"]) for row in train]
+    grad_norm = [float(row["train/grad_norm"]) for row in train]
+    requests = teacher_requests(run_dir, "POST /generate")
+    routes = {"math": expected_steps * 32, "code": expected_steps * 32}
+    trajectories = sum(routes.values())
+    response_tokens = sum(float(row["rollout/response_len/mean"]) * 64 for row in rollout)
+    summary.update(
+        {
+            "steps": len(train),
+            "trajectories": trajectories,
+            "routes": routes,
+            "teacher_endpoint_requests": requests,
+            "total_tokens": int(round(sum(token_counts))),
+            "output_tokens": int(round(response_tokens)),
+            "mean_response_tokens": response_tokens / trajectories,
+            "truncation_ratio": mean(
+                [float(row["rollout/truncated_ratio"]) for row in rollout]
+            ),
+            "reverse_kl_estimate": metric_triplet(reverse_kl),
+            "native_loss": metric_triplet(loss),
+            "grad_norm": {"mean": mean(grad_norm), "max": max(grad_norm)},
+            "active": {
+                "seconds": sum(step_times),
+                "mean_step_seconds": mean(step_times),
+                "median_step_seconds": median(step_times),
+                "steady_median_step_seconds": median(step_times[1:]),
+                "tokens_per_second": sum(token_counts) / sum(step_times),
+                "trajectories_per_second": trajectories / sum(step_times),
+            },
+            "trainer": {
+                "mean_actor_train_seconds": mean(
+                    [float(row["perf/actor_train_time"]) for row in perf]
+                ),
+                "mean_teacher_and_logprob_seconds": mean(
+                    [
+                        float(row.get("perf/ref_log_probs_time", 0))
+                        + float(row.get("perf/log_probs_time", 0))
+                        for row in perf
+                    ]
+                ),
+                "mean_importance_weight": mean(
+                    [float(row["train/mopd_is_weight_mean"]) for row in train]
+                ),
+                "mean_importance_nonzero_fraction": mean(
+                    [float(row["train/mopd_is_nonzero_frac"]) for row in train]
+                ),
+            },
+            "max_off_policy_updates": 0,
+        }
+    )
+    return summary
+
+
 def parse_verl_line(line: str) -> dict[str, float]:
     parsed: dict[str, float] = {}
     for part in line.split(" - "):
@@ -331,6 +417,14 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
+    frameworks = {
+        "prime-rl": parse_prime(args.results_dir / "prime"),
+        "miles": parse_miles(args.results_dir / "miles"),
+        "verl": parse_verl(args.results_dir / "verl"),
+    }
+    if (args.results_dir / "slime" / "wall_time.env").exists():
+        frameworks["slime"] = parse_slime(args.results_dir / "slime")
+
     result = {
         "recipe": {
             "steps": 15,
@@ -339,11 +433,7 @@ def main() -> None:
             "trajectories_per_step": 64,
             "total_trajectories": 960,
         },
-        "frameworks": {
-            "prime-rl": parse_prime(args.results_dir / "prime"),
-            "miles": parse_miles(args.results_dir / "miles"),
-            "verl": parse_verl(args.results_dir / "verl"),
-        },
+        "frameworks": frameworks,
     }
     rendered = json.dumps(result, indent=2) + "\n"
     if args.output:

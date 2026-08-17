@@ -33,6 +33,16 @@ if [[ "$teacher_mode" == multi ]]; then
 fi
 copy_file miles ray.log
 
+if ssh -q "$remote" test -f "$bench_root/mopd/runs/slime-$run_id/wall_time.env"; then
+  mkdir -p "$destination/slime"
+  for name in run.log wall_time.env gpu.csv math-teacher.log ray.log layout.env; do
+    copy_file slime "$name"
+  done
+  if [[ "$teacher_mode" == multi ]]; then
+    copy_file slime code-teacher.log
+  fi
+fi
+
 scp -q "$remote:$bench_root/mopd/runs/prime-$run_id/output/metrics.jsonl" \
   "$destination/prime/trainer-metrics.jsonl"
 scp -q "$remote:$bench_root/mopd/runs/prime-$run_id/output/run_default/metrics.jsonl" \
