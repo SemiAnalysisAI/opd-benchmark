@@ -1,0 +1,21 @@
+--- a/src/prime_rl/trainer/model.py
++++ b/src/prime_rl/trainer/model.py
+@@ -574,10 +574,16 @@
+         _patch_qwen3_5_text_position_ids()
+         _patch_qwen3_5_moe_conversion_mapping()
+         _patch_qwen3_5_linear_attn_varlen()
+-    if is_vlm_arch and config.cp > 1 and config.cp_style == "ulysses":
++    frozen_qwen_vision_with_fa4 = (
++        is_vlm_training
++        and config.vlm.freeze_vision_encoder
++        and config.attn == "flash_attention_4"
++        and getattr(model_config, "model_type", "").startswith("qwen3_5")
++    )
++    if is_vlm_arch and ((config.cp > 1 and config.cp_style == "ulysses") or frozen_qwen_vision_with_fa4):
+         vision_config = getattr(model_config, "vision_config", None)
+         if vision_config is not None:
+-            logger.info("Using SDPA for VLM vision encoder under CP")
++            logger.info("Using SDPA for the VLM vision encoder; text attention is unchanged")
+             vision_config._attn_implementation = "sdpa"
+             if hasattr(vision_config, "_attn_implementation_internal"):
+                 vision_config._attn_implementation_internal = "sdpa"

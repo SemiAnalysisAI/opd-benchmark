@@ -1,0 +1,14 @@
+{
+  "prime_rl": "550beb6f431b44390afde6b705919765bbe33289",
+  "verifiers": "392d596de8cfbfca0e53ea406276653bd1510d01",
+  "renderers": "f91c3e7061ce50ea405cdf54fd419a45cb51a152",
+  "prime_envs": "1f1e050ab0cd273bca39eed5c3e5315e6a8ae9d1",
+  "pydantic_config": "65b15dffba82d4be19efdaf8b2b9705cc1756be8",
+  "prime_kernels": "3fb83eb7aa639693876034d92a8df29245372cdf",
+  "algorithm": "Native Prime-RL per-source OPD with the upstream ref_kl loss",
+  "modified_algorithm": false,
+  "local_runtime_change": "Use SDPA for the frozen Qwen3.5-family vision encoder with FA4 text attention; source/src/prime_rl/trainer/model.py is archived per attempt",
+  "base_revision": "995ad96eacd98c81ed38be0c5b274b04031597b0",
+  "scoring_source": "The unchanged tasks.py from the recorded Miles async campaign",
+  "no_publication": true
+}

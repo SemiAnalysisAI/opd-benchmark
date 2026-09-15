@@ -1,0 +1,13 @@
+{
+  "eval": {
+    "defaults": {
+      "temperature": 0,
+      "n_samples_per_eval_prompt": 1,
+      "max_response_len": 256
+    },
+    "datasets": [
+      {"name": "countdown", "path": "@CAMPAIGN@/data/countdown4-dev.jsonl", "metadata_overrides": {"mopd_evaluation": true}},
+      {"name": "graph_color", "path": "@CAMPAIGN@/data/graph12-dev.jsonl", "metadata_overrides": {"mopd_evaluation": true}}
+    ]
+  }
+}

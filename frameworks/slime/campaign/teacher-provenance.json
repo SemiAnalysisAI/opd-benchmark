@@ -1,0 +1,10 @@
+{
+  "countdown": {
+    "repo": "semianalysisai/Qwen3.6-35B-A3B-countdown-GRPO-20260909",
+    "revision": "237a7f0345e883705026acd7f0745a3637042f73"
+  },
+  "graph_color": {
+    "repo": "semianalysisai/Qwen3.6-35B-A3B-graph-color-GRPO-20260909",
+    "revision": "ec87f87177a4ced7256928ce67c438fafa73c28e"
+  }
+}

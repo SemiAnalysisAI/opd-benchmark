@@ -1,1 +1,0 @@
-../../../benchmarks/mopd-frameworks/setup_remote.sh

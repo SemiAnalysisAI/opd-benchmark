@@ -1,0 +1,29 @@
+{
+  "repository": "https://github.com/PrimeIntellect-ai/prime-rl.git",
+  "revision": "550beb6f431b44390afde6b705919765bbe33289",
+  "recorded_archive_sha256": "294a41e8bd51ca8900382f41dc7a5bb6572be55782a04deaa03becdaa99755e0",
+  "recorded_campaign_sha256": {
+    "environments/mopd_puzzles/README.md": "c1be18441d99b7199f7e5160231d80938672839397c7ce19b2161e4a9cf6843b",
+    "environments/mopd_puzzles/mopd_puzzles/__init__.py": "7dbeae6d16667f5eadf6918d71f629226c4288aacb28d97a34a76c276c435115",
+    "environments/mopd_puzzles/mopd_puzzles/taskset.py": "cb67016e950fba50886ec11f7f0eac69568653058ba56367723460dd2a61bc12",
+    "environments/mopd_puzzles/mopd_puzzles/scoring.py": "0f5ea2628e1071c67db19e5006a0d86ff39bf35a63a5e8ab144841f5fc75d75a",
+    "environments/mopd_puzzles/pyproject.toml": "3d6b266e818f58413a4d95c745a9c589f46e996fac05a3e52c1a42fded3dde4b",
+    "make_config.py": "b5bad3d0e0b16e87d90b312a5bf506baf001bd301d05a673de9e338ed9525d8f",
+    "control.py": "0401b27887cafff37828c421018245e7e5910b66fc86a57a2bddbd46be789363",
+    "node.py": "8b35dcea1294960e2fa977ae29c09b8359a4a9182c93538acb37b540da4f91d0",
+    "telemetry.py": "07f9922f536ea8a56896e4dddfc3663d505c0620273a05526e0428948ff95568",
+    "preflight.py": "a84721ac767793e57df032aaf2fc7debba4ab887a4ea9bb209b2a891c14d47f3",
+    "teacher-provenance.json": "1cae31a1ec039a0e8a48369851fda55b69a67549d3cd179256f0cb2390a1db93",
+    "source-provenance.json": "ea202db26ba93561871ca708868565c86a59b17c0d91b2bf101f56ebfbe5ce0c"
+  },
+  "source_patch_files": [
+    "src/prime_rl/trainer/model.py"
+  ],
+  "source_patch_sha256": "018f8da92888d84f60b4e8957dcd1ab277043595a41521cb1870239bd75c2f90",
+  "recorded_run": "prime-opd-407",
+  "runtime_validated_on_original_cluster": true,
+  "portable_package_gpu_validated": false,
+  "patched_source_sha256": {
+    "src/prime_rl/trainer/model.py": "9f92581a18c1c526bf30b5f484e2a3b359b0a20545932fcf30165410f67f2e16"
+  }
+}

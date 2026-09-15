@@ -1,0 +1,168 @@
+--- /dev/null
++++ b/examples/mopd_puzzles/ASYNC.md
+@@ -0,0 +1,9 @@
++# Fully async MOPD adaptation
++
++This experimental campaign extends the class-based SGLang generation endpoint to request and retain student top-k candidate scores. It preserves score order across resumed responses and fails if candidate rows are missing or misaligned. Candidate loss and teacher routing retain the PR3116 implementation.
++
++The launcher accepts `--fully-async --no-colocate --use-rollout-logprobs`. The rollout GPU count is independent of `--rollout-gpus-per-engine`. Fully async execution uses `train_async.py` and the standard class-based worker. The buffer and staleness controls remain native Miles controls. Behavior-policy candidate probabilities remain the denominator rather than scores recomputed under a newer learner.
++
++Evaluation must use the same fully async rollout owner so producer pauses remain coordinated. The campaign passes an evaluation configuration with `metadata_overrides: {mopd_evaluation: true}` and a reward adapter that selects the existing puzzle verifier for those samples. Training continues to use teacher scoring. The legacy evaluation callback is not selected for this mode.
++
++The campaign keeps raw logs and compact framework metrics, but disables GPU profilers, full HTTP exchanges, and debug tensor dumps. All results must identify asynchronous sampling and the configured policy staleness bound. GPU hardware comparisons require an identical collection policy and scientific recipe.
+--- a/miles/rollout/generate_utils/generate_endpoint_utils.py
++++ b/miles/rollout/generate_utils/generate_endpoint_utils.py
+@@ -38,6 +38,29 @@
+     return args.sglang_router_policy in ("consistent_hashing", "manual")
+ 
+ 
++def _student_opd_top_k(args) -> int:
++    if not getattr(args, "use_opd", False) or getattr(args, "opd_top_k_strategy", "only-student") == "only-teacher":
++        return 0
++    return max(0, getattr(args, "opd_log_prob_top_k", 0) or 0)
++
++
++def _retain_student_opd_scores(args, sample, output) -> None:
++    if not _student_opd_top_k(args):
++        return
++    meta = output["meta_info"]
++    tokens = meta.get("output_token_logprobs") or []
++    rows = meta.get("output_top_logprobs")
++    if not tokens and rows is None:
++        return
++    if rows is None or len(rows) != len(tokens):
++        raise ValueError("Student OPD top-k scores must align with each generated response token")
++    if any(len(row) != _student_opd_top_k(args) for row in rows):
++        raise ValueError("Student OPD response has an incomplete candidate support")
++    if sample.metadata is None:
++        sample.metadata = {}
++    sample.metadata.setdefault("opd_student_top_logprobs", []).extend(rows)
++
++
+ def compute_routing_headers(args, sample: Sample) -> dict[str, str] | None:
+     if policy_uses_routing_key(args) and not sample.routing_key:
+         raise ValueError(
+@@ -69,6 +92,8 @@
+         "return_routed_experts": args.use_rollout_routing_replay,
+         "return_indexer_topk": args.use_rollout_indexer_replay,
+     }
++    if top_k := _student_opd_top_k(args):
++        payload["top_logprobs_num"] = top_k
+     if lora_rollout_enabled(args):
+         payload["lora_path"] = LORA_ADAPTER_NAME
+     if image_data := (multimodal_inputs or {}).get("images"):
+@@ -80,6 +105,7 @@
+ async def update_sample_from_response(
+     args, sample: Sample, payload: dict, output: dict, update_loss_mask: bool = False
+ ):
++    _retain_student_opd_scores(args, sample, output)
+     # Initialize sample.tokens for the first turn
+     if (len(sample.response) == 0) and not sample.tokens:
+         sample.tokens = payload["input_ids"]
+--- a/miles/utils/arguments.py
++++ b/miles/utils/arguments.py
+@@ -3097,6 +3097,8 @@
+     if (candidate_opd or opd_refresh or opd_balance != "none") and not args.use_opd:
+         raise ValueError("Candidate OPD, reward refresh, and domain balancing require --use-opd")
+     if candidate_opd:
++        if args.fully_async and not args.use_rollout_logprobs:
++            raise ValueError("Fully async candidate OPD requires behavior-policy scores via --use-rollout-logprobs")
+         if args.skip_actor_forward_only and not args.use_rollout_logprobs:
+             raise ValueError("Candidate OPD requires an old learner forward or explicit --use-rollout-logprobs")
+         if args.opd_type != "sglang" or args.opd_log_prob_top_k <= 0:
+@@ -3140,10 +3142,15 @@
+             raise ValueError("--opd-log-prob-top-k must be non-negative.")
+         if args.opd_log_prob_top_k > 0 and args.opd_type != "sglang":
+             raise ValueError("--opd-log-prob-top-k is currently supported only with --opd-type=sglang.")
+-        if args.opd_log_prob_top_k > 0 and args.opd_top_k_strategy != "only-teacher" and not use_legacy_rollout_v1():
++        if (
++            args.opd_log_prob_top_k > 0
++            and args.opd_top_k_strategy != "only-teacher"
++            and not use_legacy_rollout_v1()
++            and args.custom_generate_function_path is not None
++        ):
+             raise ValueError(
+-                "--opd-log-prob-top-k with a student-side strategy needs opd_student_top_logprobs, "
+-                "which only the v1 rollout produces; set MILES_USE_LEGACY_ROLLOUT_V1=1"
++                "Student-side OPD on rollout v2 currently requires its standard generation function, "
++                "which retains opd_student_top_logprobs"
+             )
+         if args.opd_teacher_urls:
+             if args.opd_type != "sglang":
+--- a/scripts/run_mopd_puzzles.py
++++ b/scripts/run_mopd_puzzles.py
+@@ -45,6 +45,8 @@
+     cleanup_processes: bool = True
+     actor_gpus: int = 8
+     rollout_gpus: int = 8
++    rollout_gpus_per_engine: int | None = None
++    fully_async: bool = False
+     num_rollout: int = 50
+     rollout_batch_size: int | None = None
+     n_samples_per_prompt: int | None = None
+@@ -68,6 +70,14 @@
+     extra_args: str = ""
+ 
+     def __post_init__(self):
++        if self.fully_async and (self.colocate or not self.use_rollout_logprobs):
++            raise ValueError("Fully async MOPD requires --no-colocate and --use-rollout-logprobs")
++        if self.rollout_gpus_per_engine is None:
++            self.rollout_gpus_per_engine = self.rollout_gpus
++        if self.rollout_gpus_per_engine <= 0 or self.rollout_gpus <= 0:
++            raise ValueError("Rollout GPU counts must be positive")
++        if self.rollout_gpus % self.rollout_gpus_per_engine:
++            raise ValueError("Rollout GPUs must be divisible by the GPUs per engine")
+         if self.resident_models and not self.colocate:
+             raise ValueError("Resident models require the colocated layout")
+         if self.rollout_batch_size is None:
+@@ -88,7 +98,7 @@
+         f'--hf-checkpoint {q(model)} --ref-load {q(model + "_torch_dist")} '
+         f'--prompt-data {q(args.data_dir + "/" + dataset)} --input-key prompt --label-key label '
+         "--metadata-key metadata --apply-chat-template --apply-chat-template-kwargs '{\"enable_thinking\":false}' "
+-        "--rollout-skip-special-tokens --rollout-shuffle --rollout-function-path miles.rollout.sglang_rollout.generate_rollout "
++        "--rollout-skip-special-tokens --rollout-shuffle "
+         f"--num-rollout {args.num_rollout} --rollout-batch-size {args.rollout_batch_size} "
+         f"--n-samples-per-prompt {args.n_samples_per_prompt} --global-batch-size {args.global_batch_size} "
+         f"--rollout-max-response-len {args.max_response_len} --rollout-temperature 1 --rollout-top-p 1 "
+@@ -104,7 +114,7 @@
+         "--attention-softmax-in-fp32 --attention-backend flash --moe-token-dispatcher-type alltoall "
+         f"--actor-num-nodes 1 --actor-num-gpus-per-node {args.actor_gpus} "
+         f"--num-gpus-per-node {args.num_gpus_per_node} "
+-        f"--rollout-num-gpus-per-engine {args.rollout_gpus} --sglang-ep-size {args.rollout_gpus} "
++        f"--rollout-num-gpus-per-engine {args.rollout_gpus_per_engine} --sglang-ep-size {args.rollout_gpus_per_engine} "
+         f"--sglang-mem-fraction-static 0.65 --sglang-max-running-requests {128 if args.resident_models else 256} "
+         "--sglang-context-length 2048 --sglang-mamba-scheduler-strategy extra_buffer "
+         "--router-disable-circuit-breaker "
+@@ -113,8 +123,14 @@
+         f'countdown {q(args.data_dir + "/countdown4-dev.jsonl")} '
+         f'graph_color {q(args.data_dir + "/graph12-dev.jsonl")} '
+         f"--n-samples-per-eval-prompt 1 --eval-max-response-len {args.max_response_len} --eval-temperature 0 "
+-        "--eval-function-path examples.mopd_puzzles.evaluate.generate_rollout "
+-    )
++    )
++    if args.fully_async:
++        train_args += "--fully-async "
++    else:
++        train_args += (
++            "--rollout-function-path miles.rollout.sglang_rollout.generate_rollout "
++            "--eval-function-path examples.mopd_puzzles.evaluate.generate_rollout "
++        )
+     if args.resident_models:
+         train_args += (
+             "--no-offload-train --no-offload-rollout "
+@@ -176,13 +192,14 @@
+     train_args = _training_args(args) + _wandb_args(args, run_name) + args.extra_args
+     U.execute_train(
+         train_args=train_args,
++        train_script="train_async.py" if args.fully_async else "train.py",
+         num_gpus_per_node=args.num_gpus_per_node,
+         megatron_model_type="qwen3.6-35B-A3B",
+         config=args,
+         cleanup_processes=args.cleanup_processes,
+         megatron_path=args.megatron_path,
+         extra_env_vars={
+-            "MILES_USE_LEGACY_ROLLOUT_V1": "1",
++            "MILES_USE_LEGACY_ROLLOUT_V1": "0" if args.fully_async else "1",
+             "WANDB_DISABLE_CODE": "true",
+             **({"NETRC": os.environ["NETRC"]} if os.environ.get("NETRC") else {}),
+         },

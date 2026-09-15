@@ -1,1 +1,0 @@
-../../../benchmarks/mopd-frameworks/generate_blog_chart.py

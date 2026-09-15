@@ -1,1 +1,0 @@
-../../../benchmarks/mopd-frameworks/collect_remote_results.sh
