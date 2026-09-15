@@ -1,0 +1,37 @@
+{
+  "countdown4-dev.jsonl": {
+    "sha256": "ba7497391529339026f0db7bc90e1b26aa25751dad4a19a3ca90992b417bbda7",
+    "bytes": 319918,
+    "rows": 512
+  },
+  "countdown4-test.jsonl": {
+    "sha256": "142bf2ff50c30afa81bd30dc36f63f1fd31de07c0e4b5b8134f957df6d4dcf7e",
+    "bytes": 641017,
+    "rows": 1024
+  },
+  "countdown4-train.jsonl": {
+    "sha256": "2a48909ab0a876585fc007dcc021203dd2adc0bd5a6db5296b4ea09736702913",
+    "bytes": 6279290,
+    "rows": 10000
+  },
+  "graph12-dev.jsonl": {
+    "sha256": "fe9cd47d24baf3fbc16e68b119adf6c55405bfaffa13e2539a79f224ebdcfff3",
+    "bytes": 557290,
+    "rows": 512
+  },
+  "graph12-test.jsonl": {
+    "sha256": "274531fe90a56a67acd7e2f4336bead075bd2e7d891bce70ac7323ace1b76246",
+    "bytes": 1115638,
+    "rows": 1024
+  },
+  "graph12-train.jsonl": {
+    "sha256": "7229bc6d4d7a37d8cf3aaab449ab35d9efb5bf63aaceac64fdd0334554f48066",
+    "bytes": 10908616,
+    "rows": 10000
+  },
+  "mixed-train.jsonl": {
+    "sha256": "bafdaa11f181f55606eefa7227583d80783e7d781281a2b0136dcdf9d307a70e",
+    "bytes": 17187906,
+    "rows": 20000
+  }
+}

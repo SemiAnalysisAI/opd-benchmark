@@ -1,0 +1,188 @@
+--- a/slime/backends/megatron_utils/actor.py
++++ b/slime/backends/megatron_utils/actor.py
+@@ -66,11 +66,15 @@
+             self.args = args
+             return 0
+ 
+-        monkey_patch_torch_dist()
++        native_groups = os.getenv('SLIME_NATIVE_PROCESS_GROUPS') == '1'
++        if native_groups:
++            assert not args.offload_train and not args.release_train
++        else:
++            monkey_patch_torch_dist()
+         super().init(args, role, with_ref, with_opd_teacher)
+         # Destroying and recreating WORLD invalidates raw dist.group.WORLD references cached by external code.
+         # Set SLIME_DESTROY_WORLD_PROCESS_GROUP=0 when such references may outlive a train sleep/wake cycle.
+-        if os.getenv("SLIME_DESTROY_WORLD_PROCESS_GROUP", "1").lower() not in {"0", "false", "no"}:
++        if not native_groups and os.getenv("SLIME_DESTROY_WORLD_PROCESS_GROUP", "1").lower() not in {"0", "false", "no"}:
+             register_default_process_group(timeout=timedelta(minutes=args.distributed_timeout_minutes))
+         else:
+             logger.info("Default WORLD process-group destruction is disabled")
+--- a/slime/backends/megatron_utils/update_weight/update_weight_from_distributed.py
++++ b/slime/backends/megatron_utils/update_weight/update_weight_from_distributed.py
+@@ -108,6 +108,7 @@
+         if dist.get_rank() == 0:
+             ray.get([engine.pause_generation.remote() for engine in self.rollout_engines])
+             ray.get([engine.flush_cache.remote() for engine in self.rollout_engines])
++            ray.get([engine.begin_weight_update.remote() for engine in self.rollout_engines])
+ 
+             # int4/fp4 pre_process
+             if self.quantization_config and self.quantization_config["quant_method"] in ["compressed-tensors"]:
+@@ -129,6 +130,7 @@
+                     post_process_quantization=True,
+                     rollout_engines=self.rollout_engines,
+                 )
++            ray.get([engine.end_weight_update.remote() for engine in self.rollout_engines])
+             ray.get([engine.continue_generation.remote() for engine in self.rollout_engines])
+         dist.barrier(group=get_gloo_group())
+ 
+--- a/slime/backends/sglang_utils/sglang_engine.py
++++ b/slime/backends/sglang_utils/sglang_engine.py
+@@ -48,7 +48,6 @@
+     from sglang.srt.entrypoints.http_server import launch_server
+ 
+     multiprocessing.set_start_method("spawn", force=True)
+-    server_args.host = server_args.host.strip("[]")
+     p = multiprocessing.Process(target=launch_server, args=(server_args,))
+     p.start()
+ 
+@@ -171,6 +170,9 @@
+ 
+     def _init_normal(self, server_args_dict):
+         logger.info(f"Launch HttpServerEngineAdapter at: {self.server_host}:{self.server_port}")
++        # Normalize the host before SGLang resolves its immutable configuration.
++        server_args_dict = dict(server_args_dict)
++        server_args_dict["host"] = server_args_dict["host"].strip("[]")
+         self.process = launch_server_process(ServerArgs(**server_args_dict))
+         self._register_to_router(server_args_dict)
+ 
+@@ -241,6 +243,18 @@
+         )
+         response.raise_for_status()
+         return True
++
++    def begin_weight_update(self):
++        response = self._make_request('begin_weight_update', {'selector':'all', 'sync_base':True})
++        if isinstance(response, dict) and response.get('success') is False:
++            raise RuntimeError(f'Cannot open weight-update session: {response}')
++        return response
++
++    def end_weight_update(self):
++        response = self._make_request('end_weight_update', {'expected_lora_checksums':None})
++        if isinstance(response, dict) and response.get('success') is False:
++            raise RuntimeError(f'Cannot close weight-update session: {response}')
++        return response
+ 
+     def update_weights_from_tensor(
+         self,
+--- a/slime/utils/reloadable_process_group.py
++++ b/slime/utils/reloadable_process_group.py
+@@ -127,6 +127,9 @@
+ 
+ 
+ _COMM_MEMORY_CHECK_SKIP_OPS = {
++    "all_gather_single",
++    "reduce_scatter_single",
++    "all_to_all_single",
+     "all_gather_into_tensor",
+     "allgather_into_tensor_coalesced",
+     "barrier",
+@@ -405,6 +408,9 @@
+     def _allgather_base(self, *a, **kw):
+         return self._fwd("_allgather_base", *a, **kw)
+ 
++    def all_gather_single(self, *a, **kw):
++        return self._fwd("all_gather_single", *a, **kw)
++
+     def allgather_coalesced(self, *a, **kw):
+         return self._fwd("allgather_coalesced", *a, **kw)
+ 
+@@ -423,11 +429,17 @@
+     def _reduce_scatter_base(self, *a, **kw):
+         return self._fwd("_reduce_scatter_base", *a, **kw)
+ 
++    def reduce_scatter_single(self, *a, **kw):
++        return self._fwd("reduce_scatter_single", *a, **kw)
++
+     def reduce_scatter_tensor_coalesced(self, *a, **kw):
+         return self._fwd("reduce_scatter_tensor_coalesced", *a, **kw)
+ 
+     def alltoall_base(self, *a, **kw):
+         return self._fwd("alltoall_base", *a, **kw)
++
++    def all_to_all_single(self, *a, **kw):
++        return self._fwd("all_to_all_single", *a, **kw)
+ 
+     def alltoall(self, *a, **kw):
+         return self._fwd("alltoall", *a, **kw)
+--- a/train_async.py
++++ b/train_async.py
+@@ -1,4 +1,6 @@
+ import ray
++import time
++from campaign import record
+ 
+ from slime.observability.logging_utils import configure_logger, finish_tracking, init_tracking
+ from slime.ray.placement_group import create_placement_groups, create_rollout_manager, create_training_models
+@@ -28,12 +30,20 @@
+     if args.check_weight_update_equal:
+         ray.get(rollout_manager.check_weights.remote(action="compare"))
+ 
++    # Record a stable baseline before the native asynchronous loop starts.
++    record("driver-events.jsonl", {"event": "baseline_start", "updates": 0})
++    ray.get(rollout_manager.eval.remote(-1))
++    record("driver-events.jsonl", {"event": "baseline_end", "updates": 0})
++
+     # async train loop.
+     rollout_data_next_future = rollout_manager.generate.remote(args.start_rollout_id)
+     for rollout_id in range(args.start_rollout_id, args.num_rollout):
++        step_started = time.monotonic()
++        wait_started = time.monotonic()
+         # Sync the last generation
+         if rollout_data_next_future is not None:
+             rollout_data_curr_ref = ray.get(rollout_data_next_future)
++        wait_seconds = time.monotonic() - wait_started
+ 
+         # Start the next rollout early.
+         if rollout_id + 1 < args.num_rollout:
+@@ -43,6 +53,7 @@
+             actor_model.create()
+ 
+         actor_trains = (not args.use_critic) or rollout_id >= args.num_critic_only_steps
++        train_started = time.monotonic()
+         if args.use_critic:
+             value_refs = critic_model.async_train(rollout_id, rollout_data_curr_ref)
+             if actor_trains:
+@@ -51,6 +62,8 @@
+                 ray.get(value_refs)
+         else:
+             ray.get(actor_model.async_train(rollout_id, rollout_data_curr_ref))
++        record("driver-events.jsonl", {"event": "optimizer_update_complete", "updates": rollout_id+1,
++            "train_seconds": time.monotonic()-train_started, "initial_batch_wait_seconds": wait_seconds})
+ 
+         if release_train or should_run_periodic_action(
+             rollout_id, args.save_interval, num_rollout_per_epoch, args.num_rollout
+@@ -65,15 +78,23 @@
+ 
+         if release_train or (rollout_id + 1) % args.update_weights_interval == 0:
+             # sync generate before update weights to prevent update weight in the middle of generation
++            wait_started = time.monotonic()
+             rollout_data_curr_ref = ray.get(x) if (x := rollout_data_next_future) is not None else None
++            next_batch_wait = time.monotonic()-wait_started
+             rollout_data_next_future = None
++            broadcast_started = time.monotonic()
+             actor_model.update_weights()
++            record("driver-events.jsonl", {"event": "weights_updated", "updates": rollout_id+1,
++                "next_batch_wait_seconds": next_batch_wait, "broadcast_seconds": time.monotonic()-broadcast_started})
+ 
+         if should_run_periodic_action(rollout_id, args.eval_interval, num_rollout_per_epoch):
+             ray.get(rollout_manager.eval.remote(rollout_id))
++        record("driver-events.jsonl", {"event": "step_complete", "updates": rollout_id+1,
++            "seconds_including_eval_and_checkpoint": time.monotonic()-step_started})
+ 
+     ray.get(rollout_manager.dispose.remote())
+     finish_tracking(args)
++    record("driver-events.jsonl", {"event": "run_complete", "updates": args.num_rollout})
+ 
+ 
+ if __name__ == "__main__":

@@ -1,0 +1,17 @@
+.DS_Store
+.agents/
+.claude/
+skills-lock.json
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+site.local.json
+work/
+checkpoints/
+*.log
+*.out
+*.sqsh
+*.safetensors
+*.whl
+.env*

@@ -1,1 +1,0 @@
-../../../benchmarks/mopd-frameworks/run_slime.sh

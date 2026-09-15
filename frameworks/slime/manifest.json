@@ -1,0 +1,41 @@
+{
+  "repository": "https://github.com/THUDM/slime.git",
+  "revision": "4c193f1f37509cca70f0e88807a9305b70f63f4e",
+  "recorded_archive_sha256": "2964dca15c10435bd0428fca865d6984bc2f64664743b034157d7a50dd73b27d",
+  "recorded_campaign_sha256": {
+    "control.py": "0fcde342cc107617ef2aa9a83e72ca18d7a18f8d0185d0ef93d4d1f106c34d27",
+    "node.py": "8b08444e92ae967052c634c51023eea769abace2a70b30ead27d2108a4701841",
+    "observe.py": "2a97a31ff9e5a457d50b7ac16f4b3c4681dd5a05ae13873fcf1c1437f796c878",
+    "campaign.py": "ee21ab3d69029b808493a96f22dd7c318712a7d5979d383a0bfcd977d1ff5d26",
+    "serve-teachers.py": "3d7d7bb0bf26ecab3648baf21c687a6f8ba25fccc3830a11758c852116e1d2a9",
+    "teacher-provenance.json": "1cae31a1ec039a0e8a48369851fda55b69a67549d3cd179256f0cb2390a1db93",
+    "test_campaign.py": "bb28ce087b1d08729ab12dd2dd59889a88ee7ebd177dbc85c98ff28d7d680d33",
+    "make_args.py": "5f802235fb40bd1052178a49ce835957e34707d78f2149a7424dcfce82010bd0",
+    "endpoints.py": "7554683ccf0da9b8b99f15474c54f0f8103b2684b611ebac57813c327a8d25c1",
+    "scoring.py": "0f5ea2628e1071c67db19e5006a0d86ff39bf35a63a5e8ab144841f5fc75d75a",
+    "train_entry.py": "d3c63803dc42a9e622fe49a272fcf7d923abfe172d49e50374167976008ff082",
+    "source-provenance.json": "984988bfe6ec09bbc9cf359c815c480c0286ddfbc084beecc2785852b73cf13b",
+    "mismatch-metrics.yaml": "f153566648ead9155733c449d3109ff840ca3ffed44ac0f76067322b7411b66d",
+    "wheels.sha256": "3f0f7e059aab95fb14c53ad8cfcd5d1c74e2bc82d8cd4fe23fc5d3d2c1591b2a",
+    "test_weight_session.py": "14e1e68ca5d27ad3e3b702569ec9fab046261ce78f90e37db88c4dc7fe692596",
+    "test_collectives.py": "dedf1c9604a5f7b78a8deff4c431b687980d2f89940491b39e2ee1699f9d91d3"
+  },
+  "source_patch_files": [
+    "slime/backends/megatron_utils/actor.py",
+    "slime/backends/megatron_utils/update_weight/update_weight_from_distributed.py",
+    "slime/backends/sglang_utils/sglang_engine.py",
+    "slime/utils/reloadable_process_group.py",
+    "train_async.py"
+  ],
+  "source_patch_sha256": "3f6971278f3c951bfd4f86f565ed18aa248850d09469252ac4dbba29fd6a04b8",
+  "recorded_run": "slime-opd-416",
+  "runtime_validated_on_original_cluster": true,
+  "portable_package_gpu_validated": false,
+  "patched_source_sha256": {
+    "slime/backends/megatron_utils/actor.py": "4865a4438255555822c89cfbf329545ff3f6901163b7b4b43048daaa446d5f2e",
+    "slime/backends/megatron_utils/update_weight/update_weight_from_distributed.py": "6377c41753fbcf1fd74692869bee9528fa751f78a07535933b74fa2aee10e7fc",
+    "slime/backends/sglang_utils/sglang_engine.py": "40455fb7fda40f64ab64e649d8a554624d81027dde1303a77ae0e786380fe418",
+    "slime/utils/reloadable_process_group.py": "76031bb44f2abc22f330dc1f02563298cf8f82b00ad819efebbd27aa0d66ee7b",
+    "train_async.py": "e3c3e5a8b77572e36a1b78b707c7ace0899ace4f77ff0b59bf5bb8d6ffccd19f"
+  }
+}

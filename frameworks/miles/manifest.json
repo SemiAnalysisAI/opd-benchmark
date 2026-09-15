@@ -1,0 +1,36 @@
+{
+  "repository": "https://github.com/radixark/miles.git",
+  "revision": "8f8e4dff55d80bd9d36c3490c333a119f38480ed",
+  "recorded_archive_sha256": "825cf5670222742e17a790c3c4736938ca781b1c9ad59c6a648dd4ab36488470",
+  "recorded_campaign_sha256": {
+    "control.py": "fc935464071870f7f9f2545109f6cb6eb71de1ecc2b1d4c99d88944739dbafba",
+    "node.py": "5dec41382256d87b29f768be015823ce99d2602e5c91bc89b4842249ffb964d6",
+    "observe.py": "9271460e1d2388b9a6144479719c3fa39fdbe68f36a82ad00ef782fa77fa15fe",
+    "campaign_async.py": "824a08894834e2f24b2013b256341222f7eb321f15da681984dac07cbb59becc",
+    "serve-teachers.py": "7c82c6a202da23728188923d839f086abe6182644e9b0814e929f82461f5ba58",
+    "eval.json": "a2f4bd86c7d73a7b74ae13f3a205a293101f00cf97e3f58aa0dfcb42a859373b",
+    "teacher-provenance.json": "1cae31a1ec039a0e8a48369851fda55b69a67549d3cd179256f0cb2390a1db93",
+    "test-async-contract.py": "8f11662da3fe5ce2ace7994e6464c5deea3e059989728d74b7cc7ccab652335b",
+    "test-scoring-retry.py": "4d3261759f282d7802d23005214b5bce00eaa15c9580e42a88ec8068180ad4c5",
+    "endpoints.py": "c814a0b74be1a4e88277b5355487aaf2d49bf314ea01c6ecf6a775859383a500",
+    "balanced_async_buffer.py": "707165871466bdfc8dbd639d4b5be6be33a3159b9a89f715363372d92e293a6e",
+    "test-balanced-buffer.py": "20b9356c1a7098a6a4ed50964da3671403fc19cab24649059bc01c3e1d47b42b",
+    "test-balanced-integration.py": "b9d649bd1a5c8b4deb485f1d43898d51eac3a78390da365909d3e739d9ec7870"
+  },
+  "source_patch_files": [
+    "examples/mopd_puzzles/ASYNC.md",
+    "miles/rollout/generate_utils/generate_endpoint_utils.py",
+    "miles/utils/arguments.py",
+    "scripts/run_mopd_puzzles.py"
+  ],
+  "source_patch_sha256": "3e5428a822c435a28226b7865650b335bc157f64b004f603b756cd23f90676ad",
+  "recorded_run": "mopd-async-401",
+  "runtime_validated_on_original_cluster": true,
+  "portable_package_gpu_validated": false,
+  "patched_source_sha256": {
+    "examples/mopd_puzzles/ASYNC.md": "d71ff2ad38bf6d5be45083776696d8aeefe53c52a7eeb7600317ed080a908a09",
+    "miles/rollout/generate_utils/generate_endpoint_utils.py": "8e15e432244d16c37dbd46291d85993fc56e0f88ce2d8dee7c7e7399019d6203",
+    "miles/utils/arguments.py": "c67ca177dedfadfcd69310f3cd212de071ee703b69552b271d548e493116a9e4",
+    "scripts/run_mopd_puzzles.py": "feb37ad4466c0c4c1285ba2a099f6059b6b9cc52c5eaeea70c261b99b2d1d402"
+  }
+}

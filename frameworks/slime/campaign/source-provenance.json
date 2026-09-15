@@ -1,0 +1,13 @@
+{
+  "framework": "Slime",
+  "repository": "https://github.com/THUDM/slime",
+  "revision": "4c193f1f37509cca70f0e88807a9305b70f63f4e",
+  "container": "@CONTAINER_IMAGE@",
+  "megatron_revision": "8c1e05747eb612b382df2632783df5c83a853646",
+  "execution": "native batched asynchronous train_async.py",
+  "local_source_changes": ["train_async.py adds baseline evaluation and driver timing events", "sglang_engine.py normalizes host before construction of immutable ServerArgs", "The distributed updater opens and closes the sessions required by the pinned SGLang version; HTTP methods check explicit failure responses", "ReloadableProcessGroup forwards the newer PyTorch single-tensor collective entry points to its inner NCCL group"],
+  "ephemeral_container_dependency_override": "numpy==1.26.4 and scipy==1.15.3; wheel digests are recorded in wheels.sha256; shared image remains unchanged",
+  "algorithm_modified": false,
+  "native_nccl_groups": "SLIME_NATIVE_PROCESS_GROUPS=1 bypasses reloadable Python process groups only when trainer offload and release are disabled; native NCCL collective tests cover asynchronous and coalesced waits",
+  "hooks": "Domain routing calls native OPD reward_func and native post_process_rewards. Task scores remain diagnostics, and scalar training rewards are zero."
+}

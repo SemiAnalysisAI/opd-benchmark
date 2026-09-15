@@ -1,1 +1,0 @@
-../../../benchmarks/opd-frameworks/gpu_sampler.sh
