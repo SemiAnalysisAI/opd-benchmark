@@ -32,6 +32,12 @@ The files in `campaign/` are templates. Values such as `@BASE_MODEL@` are replac
 Run the prepared copies rather than the templates. Each manifest records the upstream revision, patch digest, and original archive digest.
 The [provenance document](docs/PROVENANCE.md) identifies packaging changes and scientific differences.
 
+The separate [Tinker campaign](frameworks/tinker/README.md) trains hosted puzzle
+teachers and a 40-update student through the Tinker SDK. It retains remote
+checkpoints and local evidence without downloading model weights. See its own
+protocol for LoRA, objective, and teacher-comparability differences; it does not
+use the Slurm preparation or submission tools below.
+
 ## Fixed experiment
 
 The experiments use 40 optimizer updates, 128 prompts per update, one response per prompt, learning rate 1e-6, and a 256-token response limit.
