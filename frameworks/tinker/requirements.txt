@@ -68,7 +68,7 @@ tml-renderers==0.1.0
 tokenizers==0.22.2
 torch==2.14.0
 tqdm==4.70.1
-transformers==5.5.4
+transformers==5.10.1
 typer==0.27.2
 typing-extensions==4.16.0
 typing-inspection==0.4.4
