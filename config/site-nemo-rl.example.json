@@ -1,0 +1,16 @@
+{
+  "assets": "/shared/opd-assets",
+  "base_model": "/shared/opd-assets/models/Qwen3.6-35B-A3B",
+  "megatron_model": "/shared/opd-assets/models/Qwen3.6-35B-A3B_torch_dist",
+  "teachers": "/shared/opd-assets/teachers",
+  "container_image": "/shared/opd-runtime/miles-amd64.sqsh",
+  "megatron_source": "/root/Megatron-LM",
+  "uv": "/usr/local/bin/uv",
+  "generation_node": "generation-node",
+  "trainer_node": "trainer-node",
+  "generation_ip": "192.0.2.20",
+  "trainer_ip": "192.0.2.10",
+  "teacher_node": "teacher-node",
+  "teacher_ip": "192.0.2.30",
+  "nemo_rl_container": "/shared/opd-runtime/nemo-rl-v0.7.0.sqsh"
+}

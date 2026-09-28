@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-runs/slime-caesar-01/checkpoints/slime-979/hf/iter_19",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 372.3330216407776,
+  "output_tokens_per_second": 44909.12443466367,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7767857142857143,
+      "pass@8": 0.9920634920634921,
+      "finished_thinking": 0.9583333333333334,
+      "truncated": 0.04563492063492063,
+      "response_tokens_mean": 12722.262896825398,
+      "response_tokens_median": 10932.5
+    },
+    "simple_geometry": {
+      "avg@8": 0.7177734375,
+      "pass@8": 1.0,
+      "finished_thinking": 0.9970703125,
+      "truncated": 0.0029296875,
+      "response_tokens_mean": 3805.7705078125,
+      "response_tokens_median": 3681.0
+    }
+  }
+}

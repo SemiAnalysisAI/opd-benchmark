@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-runs/miles-caesar-01/checkpoints/miles-965/hf/iter_19",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 376.73781752586365,
+  "output_tokens_per_second": 44616.56148667914,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7738095238095238,
+      "pass@8": 1.0,
+      "finished_thinking": 0.9523809523809523,
+      "truncated": 0.047619047619047616,
+      "response_tokens_mean": 12752.33134920635,
+      "response_tokens_median": 11012.0
+    },
+    "simple_geometry": {
+      "avg@8": 0.6806640625,
+      "pass@8": 1.0,
+      "finished_thinking": 0.99609375,
+      "truncated": 0.00390625,
+      "response_tokens_mean": 3861.71484375,
+      "response_tokens_median": 3729.5
+    }
+  }
+}

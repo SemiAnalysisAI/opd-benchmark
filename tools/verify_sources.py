@@ -12,7 +12,7 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 def verify(name, repository):
-    package = REPO/'frameworks'/name
+    package = REPO/'frameworks'/name/'upstream'
     manifest = json.loads((package/'manifest.json').read_text())
     raw = subprocess.check_output(['git', '-C', str(repository), 'archive', manifest['revision']])
     with tempfile.TemporaryDirectory(prefix='opd-source-check-') as temp:
@@ -30,7 +30,7 @@ def verify(name, repository):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('miles', 'prime-rl', 'slime'):
+    for name in ('miles', 'prime-rl', 'slime'):  # verl and NeMo-RL run unmodified.
         parser.add_argument('--'+name, type=Path)
     args = vars(parser.parse_args())
     if not any(args.values()):

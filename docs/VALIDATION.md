@@ -1,32 +1,40 @@
-# Package validation
+# Validation
 
-The package was checked locally on September 15, 2026. No cluster job was submitted during packaging.
+## Current code
 
-The following six tests passed under Python 3.12.
+The package ran the single-teacher `caesar_cipher` variant in Miles, Prime-RL, Slime and verl on 16 B200 GPUs on September 27, 2026; every run completed 20 updates and was benchmarked ([report](CAESAR-OPD-2026-09-27.md)). The two-teacher MOPD recipe has not run. The checks below need no GPU.
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-The tests render and parse every campaign template, check every dataset digest and row count,
-verify patch digests, reject invalid site values, preserve existing output directories, and confirm that submission defaults to a dry run.
+The package tests check the following:
+- Campaign files compile and contain no machine paths.
+- Dataset digests and row counts match.
+- Patch digests match.
+- Invalid site files are rejected.
+- Existing output directories are preserved.
+- Submission defaults to a dry run.
+- Telemetry discovers the announced engine ports.
+- Hosted credentials are read as configured.
+- The scorer requires the answer after `</think>`. This test is skipped unless `reasoning-gym==0.1.25` is installed.
 
-All framework patches were applied to clean archives of their pinned upstream revisions.
-Every changed source file matched its counterpart from the original successful-run source archive by SHA-256.
-Miles had four changed files, Prime-RL had one, and Slime had five.
-The check can be repeated with local upstream Git clones as follows.
+The hosted campaigns have their own offline tests; see their READMEs.
+There is no automated preflight. Distributed training, checkpoint conversion, teacher fusing on real weights,
+image reconstruction, and other GPU types remain untested.
+
+## Historical record: September 15, 2026 packaging checks
+
+These checks covered the previous experiment's package, before the restructure. No cluster job was submitted.
+
+Six package tests passed under Python 3.12.
+Every patch applied to a clean archive of its pinned revision, and each changed file matched the original successful-run archive by SHA-256.
+Miles had four changed files, Prime-RL one, and Slime five. Repeat this check with local upstream clones:
 
 ```bash
 python3 tools/verify_sources.py --miles /path/to/miles --prime-rl /path/to/prime-rl --slime /path/to/slime
 ```
 
-A complete Slime campaign was prepared in a temporary directory from a local clone.
-It checked out the correct revision, applied the patch, expanded site values, and materialized the datasets.
-Its submission command printed the expected two-node, 16-GPU allocation request and did not invoke Slurm.
-
-The new package was scanned for common Hugging Face and GitHub token patterns, private-key headers,
-original private network addresses, and original personal or cluster paths. No such values were found in the new package.
-This targeted scan is not a security audit of the repository's historical commits.
-
-Distributed training, new checkpoint conversion, runtime image reconstruction, and execution on a different GPU remain untested for this package.
-The original experiment outcomes do not remove these validation gaps.
+A Slime campaign was prepared from a local clone, and its submission command printed the expected two-node, 16-GPU request without invoking Slurm.
+A scan for token patterns, private keys, and original private addresses and paths found none.
+That scan was not an audit of historical commits.
