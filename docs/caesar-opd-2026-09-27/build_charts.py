@@ -2,9 +2,9 @@
 
     uv run --with matplotlib python docs/caesar-opd-2026-09-27/build_charts.py
 
-Colors are the validated categorical slots 1-4 in a fixed framework order; the base and
-teacher references are neutral. Every series is direct-labeled and every value is also in
-the report's tables (two slots sit below 3:1 contrast on the light surface).
+Each framework keeps one color in every figure; base and teacher are grey. Two of the colors
+fall below 3:1 contrast on the light background, so every series is also labeled directly and
+every value appears in the report's tables.
 """
 import csv
 import json
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 HERE = Path(__file__).resolve().parent
 DATA, OUT = HERE / 'data', HERE / 'figures'
 SURFACE, INK, INK_2, MUTED, GRID = '#fcfcfb', '#0b0b0b', '#52514e', '#8a8984', '#e6e5e1'
-FRAMEWORKS = {  # Fixed order: color follows the framework, never its rank.
+FRAMEWORKS = {  # Fixed order; color follows the framework, not its rank.
     'miles-1021': ('Miles', '#2a78d6'), 'prime-rl-1017': ('Prime-RL', '#eb6834'),
     'slime-979': ('Slime', '#1baf7a'), 'verl-966': ('verl', '#eda100')}
 REFERENCES = {'base': ('Base', '#b7b6b1'), 'teacher-caesar': ('Caesar teacher', '#6f6e69')}
@@ -32,7 +32,7 @@ plt.rcParams.update({
 
 
 def end_labels(ax, labels, min_gap=0.06):
-    """Direct labels at line ends, nudged apart vertically so they never collide."""
+    """Label each line at its end, nudging labels apart vertically so they do not overlap."""
     low, high = ax.get_ylim()
     span = high - low
     placed = []
@@ -83,7 +83,7 @@ def updates():
 
 
 def per_update_panels():
-    """Small multiples of per-update series; each panel has its own single measure."""
+    """One panel per per-update metric, all frameworks overlaid."""
     series = updates()
     panels = [('step_s', 'Update time (s)', 1),
               ('wait_share', 'Share of update waiting for rollouts (%)', 100),
@@ -117,7 +117,7 @@ def per_update_panels():
     save(fig, 'per_update.png')
 
 
-# The capture role names follow the site file; verl's Ray placement put its rollout on the "learner" node.
+# Capture roles follow the site file, but Ray put verl's rollout on the "learner" node.
 ROLLOUT_NODE_ROLE = {'verl-966': 'learner'}
 
 

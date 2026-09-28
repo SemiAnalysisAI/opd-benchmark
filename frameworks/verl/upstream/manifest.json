@@ -2,5 +2,5 @@
   "repository": "https://github.com/verl-project/verl.git",
   "revision": "6093e007cc341973c9d9a6fb3867a85976c7c458",
   "source_patch_sha256": null,
-  "note": "Unmodified upstream. The recipe follows examples/on_policy_distillation_trainer (multi-teacher OPD) on the fully async trainer in verl/experimental/fully_async_policy."
+  "note": "Unmodified upstream. The recipe follows examples/on_policy_distillation_trainer (multi-teacher OPD), run on the fully async trainer in verl/experimental/fully_async_policy."
 }

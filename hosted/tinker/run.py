@@ -31,8 +31,8 @@ RENDERER = 'qwen3_5'  # The cookbook's thinking-enabled Qwen3.5/3.6 renderer.
 EXPERIMENT_TAG = 'mopd-reasoning-gym-20260927'  # Tinker user_metadata on every session.
 SEED_STRIDE = 100_000  # Training prompt i of batch `step` samples with seed + step*SEED_STRIDE + i.
 
-# Teacher GRPO, from research/rl-teachers-2026-09-24/rl.template.toml: 32 prompts x 8 responses,
-# at most 200 updates, held-out evaluation every 25, no weight decay. The LR is set in main().
+# Teacher GRPO, with the training settings of the released GRPO teachers (recipe.TEACHERS):
+# 32 prompts x 8 responses, at most 200 updates, dev evaluation every 25. The LR is set in main().
 TEACHER = {'prompts': 32, 'group_size': 8, 'steps': 200, 'eval_every': 25}
 # Teacher GRPO uses clipped PPO. The student uses importance sampling on
 # teacher-minus-behavior advantages, as in the cookbook distillation recipe.
@@ -362,7 +362,7 @@ def main():
     p.add_argument('--steps', type=int, help=f'Default: {TEACHER["steps"]} for a teacher, {recipe.UPDATES} for MOPD')
     p.add_argument('--prompts', type=int, help=f'Default: {TEACHER["prompts"]} for a teacher, {recipe.PROMPTS_PER_UPDATE} for MOPD')
     p.add_argument('--group-size', type=int, help=f'Default: {TEACHER["group_size"]} for a teacher, 1 for MOPD')
-    # 10x the full-finetuning LR (1e-6 for the student and the research teachers): the
+    # 10x the full-finetuning LR (1e-6 for the student and the released GRPO teachers): the
     # cookbook's documented LoRA conversion.
     p.add_argument('--learning-rate', type=float, default=10 * recipe.LEARNING_RATE)
     p.add_argument('--target-score', type=float, help='Optional teacher-only dev threshold; stops after a scheduled evaluation')

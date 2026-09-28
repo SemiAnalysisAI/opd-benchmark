@@ -1,11 +1,10 @@
-"""The fixed experiment shared by every framework: multi-teacher OPD (MOPD) on two reasoning_gym tasks.
+"""The experiment every framework runs: multi-teacher OPD (MOPD) on two reasoning_gym tasks.
 
-Each framework translates these values into its own configuration format.
-Read this file first: everything that differs between frameworks lives in
-that framework's directory, and everything here is common to all of them.
+Each framework translates these values into its own configuration format;
+anything framework-specific lives in that framework's directory.
 
-A prepared campaign may narrow the experiment in its `experiment.json`, written by
-`tools/prepare.py --domains` (for example single-teacher OPD on `caesar_cipher`).
+`tools/prepare.py --domains` can narrow a campaign to one task (for example
+single-teacher OPD on `caesar_cipher`) by writing the campaign's `experiment.json`.
 """
 import json
 from pathlib import Path
@@ -13,9 +12,9 @@ from pathlib import Path
 _EXPERIMENT = Path(__file__).resolve().parents[1] / 'experiment.json'
 EXPERIMENT = json.loads(_EXPERIMENT.read_text()) if _EXPERIMENT.is_file() else {}
 
-# Tasks. Each has its own frozen GRPO teacher. The rows in `data/` are reasoning_gym 0.1.25
-# problems in the default task config: train seed 20000, dev seed 10000 (disjoint problems),
-# with reasoning_gym's default system prompt, the one the teachers were trained with.
+# Tasks, each with its own frozen GRPO teacher. The rows in `data/` are reasoning_gym 0.1.25
+# problems from the default task config (train seed 20000, dev seed 10000, so the splits are
+# disjoint) with reasoning_gym's default system prompt, which the teachers were trained with.
 ALL_DOMAINS = ('caesar_cipher', 'simple_geometry')
 DOMAINS = tuple(EXPERIMENT.get('domains', ALL_DOMAINS))
 MIXED_TRAIN_FILE = 'mixed-train.jsonl'  # Both train files interleaved.
@@ -28,7 +27,7 @@ def data_file(domain, split):
     return f'{domain}-{split}.jsonl'
 
 
-# The training prompts: both tasks interleaved, or the single task's own file.
+# Training prompts: both tasks interleaved, or the single task's own file.
 TRAIN_FILE = MIXED_TRAIN_FILE if DOMAINS == ALL_DOMAINS else data_file(DOMAINS[0], 'train')
 assert set(DOMAINS) <= set(ALL_DOMAINS) and (len(DOMAINS) == 1 or DOMAINS == ALL_DOMAINS), DOMAINS
 
@@ -38,11 +37,11 @@ UPDATES = 20
 PROMPTS_PER_UPDATE = 128  # Split equally between the domains.
 SAMPLES_PER_PROMPT = 1
 LEARNING_RATE = 1e-6
-ENABLE_THINKING = True  # Every experiment runs with thinking on; the scorer needs a finished `</think>`.
+ENABLE_THINKING = True  # The scorer only reads answers after a finished `</think>`.
 CONTEXT_LENGTH = 32_768
 MAX_RESPONSE_TOKENS = 30_720
 MAX_POLICY_LAG = 1  # Accepted optimizer updates between sampling and training.
-SAVE_INTERVAL = 10  # Checkpoints after updates 10 and 20, so the held-out benchmark has a mid-run point.
+SAVE_INTERVAL = 10  # Checkpoints after updates 10 and 20, so the benchmark also gets a mid-run point.
 
 # Evaluation: greedy decoding on the full dev split of each domain.
 EVAL_INTERVAL = 10
@@ -64,9 +63,9 @@ TEACHERS = {  # GRPO teachers; the revisions are the tags step-125 and step-50.
 BASE_MODEL_DIR = 'Qwen3.6-35B-A3B'
 MEGATRON_MODEL_DIR = 'Qwen3.6-35B-A3B_torch_dist'
 
-# Hardware: two nodes with eight GPUs each. The trainer node trains on all
-# eight. The generation node serves one frozen teacher per GPU on GPUs 0-1
-# (GPU 1 idles with one teacher) and the student policy on GPUs 2-7 in engines of two GPUs.
+# Hardware: two nodes with eight GPUs each. The trainer node trains on all eight.
+# The generation node serves one frozen teacher per GPU on GPUs 0-1 (GPU 1 is idle
+# in single-teacher runs) and the student policy on GPUs 2-7, two GPUs per engine.
 GPUS_PER_NODE = 8
 TRAINER_GPUS = 8
 TEACHER_GPU = {domain: gpu for gpu, domain in enumerate(DOMAINS)}

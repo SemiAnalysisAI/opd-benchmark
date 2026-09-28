@@ -1,15 +1,15 @@
 """Benchmark one Hugging Face checkpoint on the packaged dev sets with vLLM, thinking on.
 
-    python tools/benchmark.py MODEL OUTPUT_DIR [--domains caesar_cipher simple_geometry] [--gpus 8]
+    python tools/benchmark.py MODEL OUTPUT_DIR [--domains ...] [--samples 8] [--seed 0] [--gpus 8]
 
-Each dev prompt gets `--samples` responses (default 8) at the training sampling settings:
-temperature 1, top-p 1, up to `recipe.MAX_RESPONSE_TOKENS` tokens. Prompts are split across
-`--gpus` single-GPU vLLM engines. `shared.scoring.score` reads the answer after the last
-`</think>`, so a response cut off mid-thought scores 0.
+Each dev prompt gets `--samples` responses at the training sampling settings:
+temperature 1, top-p 1, up to `recipe.MAX_RESPONSE_TOKENS` tokens. Prompts are split
+across `--gpus` single-GPU vLLM engines. The answer is read after the last `</think>`,
+so a response cut off mid-thought scores 0.
 
-Writes `responses.jsonl.gz` and `summary.json` (avg@k, pass@k, answer and truncation rates,
-response lengths, output tokens per second). Needs a Python with vLLM, and reasoning-gym
-0.1.25 in the environment or in `$CAMPAIGN_PYDEPS`.
+Writes `responses.jsonl.gz` and `summary.json` (avg@k, pass@k, finished-thinking and
+truncation rates, response lengths, output tokens per second). Needs vLLM, plus
+reasoning-gym 0.1.25 installed or in `$CAMPAIGN_PYDEPS`.
 """
 import argparse
 import gzip
@@ -89,12 +89,12 @@ def summarize(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('model', type=Path)
-    parser.add_argument('output', type=Path)
+    parser.add_argument('model', type=Path, help='Hugging Face checkpoint directory')
+    parser.add_argument('output', type=Path, help='new directory for the results')
     parser.add_argument('--domains', nargs='+', default=list(recipe.ALL_DOMAINS), choices=recipe.ALL_DOMAINS)
-    parser.add_argument('--samples', type=int, default=8)
+    parser.add_argument('--samples', type=int, default=8, help='responses per prompt (default: 8)')
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--gpus', type=int, default=8)
+    parser.add_argument('--gpus', type=int, default=8, help='one vLLM engine per GPU (default: 8)')
     parser.add_argument('--worker', type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.worker is not None:

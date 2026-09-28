@@ -1,10 +1,10 @@
-"""The verl recipe: multi-teacher OPD on verl's fully async trainer, from `shared.recipe`.
+"""verl recipe: multi-teacher OPD on verl's fully async trainer, built from `shared.recipe`.
 
-Follows upstream `examples/on_policy_distillation_trainer` (distillation.enabled, teachers
-routed by `data_source`, sampled-token k1 reverse KL applied as a policy gradient, no task
-reward) on `verl.experimental.fully_async_policy` with FSDP training and vLLM serving.
-Run by the learner role from the campaign's `source/`; the overrides are kept as `argv.json`.
-`compute_score` below is verl's reward hook; the score is diagnostic only.
+Follows upstream `examples/on_policy_distillation_trainer` (teachers routed by `data_source`,
+sampled-token k1 reverse KL applied as a policy gradient, no task reward), run on
+`verl.experimental.fully_async_policy` with FSDP training and vLLM serving. The learner role runs
+this from the campaign's `source/` and saves the overrides as `argv.json`. `compute_score` is verl's
+reward hook; its score is diagnostic only.
 """
 import json
 import os
@@ -19,7 +19,7 @@ TEACHER_GPUS = len(recipe.TEACHER_GPU)
 
 
 def write_parquet(result):
-    """verl reads parquet rows: chat prompt, teacher routing key, and the label for scoring."""
+    """Write parquet rows for verl: chat prompt, teacher routing key and scoring label."""
     import pandas
 
     def rows(name):
@@ -42,9 +42,9 @@ def overrides(result, train, dev):
     s, r = site(), recipe
     prompt_tokens = r.CONTEXT_LENGTH - r.MAX_RESPONSE_TOKENS
     policy_engines = len(r.POLICY_GPUS) // r.POLICY_GPUS_PER_ENGINE
-    # As in upstream examples/on_policy_distillation_trainer: a single teacher uses the default `teacher_model`
-    # entry; several are added as named entries and routed by `data_source`. A teacher's context holds the
-    # student's prompt and full response plus one generated token.
+    # As in upstream's example, one teacher uses the default `teacher_model` entry; several are added
+    # as named entries routed by `data_source`. The +1 in max_model_len fits the student's prompt and
+    # full response plus one generated teacher token.
     inference = ['inference.name=vllm', 'inference.tensor_model_parallel_size=1',
                  'inference.gpu_memory_utilization=0.8', f'inference.max_model_len={r.CONTEXT_LENGTH + 1}']
     if len(r.DOMAINS) == 1:
@@ -57,7 +57,7 @@ def overrides(result, train, dev):
             f'+distillation.teacher_models.{d}.num_replicas=1',
             *(f'+distillation.teacher_models.{d}.{x}' for x in inference))]
     return [
-        # Data: streamed one prompt at a time; with two tasks, the mixed file interleaves them.
+        # Data: one prompt at a time; with two domains, the mixed file interleaves them.
         f'data.train_files=["{train}"]', f'data.val_files={json.dumps([str(p) for p in dev])}',
         'data.prompt_key=prompt', 'data.return_raw_chat=True', 'data.train_batch_size=0', 'data.gen_batch_size=1',
         f'data.max_prompt_length={prompt_tokens}', f'data.max_response_length={r.MAX_RESPONSE_TOKENS}',
@@ -95,10 +95,10 @@ def overrides(result, train, dev):
         'actor_rollout_ref.rollout.val_kwargs.do_sample=False', 'actor_rollout_ref.rollout.val_kwargs.n=1',
         'rollout.nnodes=1', f'rollout.n_gpus_per_node={len(r.POLICY_GPUS)}', f'rollout.n={r.SAMPLES_PER_PROMPT}',
         f'rollout.total_rollout_steps={r.UPDATES * r.PROMPTS_PER_UPDATE}',
-        # One update per 128 samples, a weight sync after each, and at most one batch of policy lag.
+        # A weight sync after every update and at most MAX_POLICY_LAG batches of policy lag.
         f'async_training.staleness_threshold={r.MAX_POLICY_LAG}', 'async_training.trigger_parameter_sync_step=1',
-        # Every weight sync aborts in-flight requests; partial rollout (the trainer's default) resumes them
-        # instead of returning them truncated.
+        # Each weight sync aborts in-flight requests; partial rollout (the trainer's default) resumes
+        # them instead of returning them truncated.
         'async_training.require_batches=1', 'async_training.partial_rollout=True',
         f'async_training.concurrent_samples_per_replica={-(-MAX_IN_FLIGHT // policy_engines)}',
         # Trainer, evaluation and checkpoints.

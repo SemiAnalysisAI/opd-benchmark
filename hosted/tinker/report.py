@@ -246,7 +246,7 @@ def report(root, runs, final_audit):
     prices = ', '.join(f'{k} ${v:g}' for k, v in PRICE.items())
     lines += ['', '## Caveats', '',
         '- Development-split scores from one seed, greedy, thinking on. Teacher goals are operational (just below the '
-        'research GRPO teachers\' held-out scores); the retrained teachers are not the frozen recipe teachers.',
+        'released GRPO teachers\' held-out scores); the retrained teachers are not the frozen recipe teachers.',
         '- Stage shares are client wall time within update loops (network and queueing included), not GPU utilization. '
         'In pipelined runs, Sampling is the exposed wait for the prepared batch; teacher scoring overlaps it in the background.',
         f'- Costs use recorded tokens at published per-million prices ({prices}); they are not invoices and exclude retries and storage.',

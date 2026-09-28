@@ -1,7 +1,7 @@
-"""Miles campaign entry point: `node.py` runs the controller, `node.py ROLE` one container role.
+"""Miles entry point: `node.py` runs the controller, `node.py ROLE` runs one container role.
 
-The shared two-node runtime is `shared/container.py`; this adds the Miles
-recipe: a fully async, sampled-token MOPD launch of the pinned upstream script.
+The two-node runtime lives in `shared/container.py`. This file adds the Miles recipe: a fully
+async, sampled-token MOPD launch of the pinned upstream script.
 """
 import json
 import os
@@ -24,15 +24,15 @@ class MilesNode(ContainerNode):
     def train_command(self, teacher_urls):
         (self.result / 'eval.json').write_text(json.dumps(eval_config({'mopd_evaluation': True}), indent=2))
         dev = [x for d in r.DOMAINS for x in (d, DATA / r.data_file(d, 'dev'))]
-        # Appended after the pinned launcher's own arguments, so these take precedence. The first
-        # group replaces the launcher's puzzle-specific tasks, thinking setting and 2k context.
+        # Appended after the launcher's own arguments, so these win. The first lines replace the
+        # launcher's puzzle-specific tasks, thinking setting and 2k context.
         extra = ['--prompt-data', DATA / r.TRAIN_FILE, '--data-source-path', 'domain_balance.BalancedDataSource',
                  '--opd-domain-targets', *(f'{d}={1 / len(r.DOMAINS)}' for d in r.DOMAINS),
                  '--eval-prompt-data', *dev, '--eval-config', self.result / 'eval.json',
                  '--apply-chat-template-kwargs', json.dumps({'enable_thinking': r.ENABLE_THINKING}),
                  '--sglang-context-length', r.CONTEXT_LENGTH, '--context-parallel-size', '1',
                  '--log-probs-chunk-size', r.LOG_PROBS_CHUNK_SIZE,
-                 # Match the Slime and Prime-RL optimizer; the launcher's own is wd 0.1, beta2 0.98.
+                 # Match the Slime and Prime-RL optimizer (the launcher uses wd 0.1, beta2 0.98).
                  '--weight-decay', '0', '--adam-beta2', '0.999',
                  # The MTP head is not trained (loss scale 0); dropping it frees memory at 32k.
                  '--mtp-num-layers', '0',
@@ -42,7 +42,7 @@ class MilesNode(ContainerNode):
                  '--async-max-concurrent-samples', '256', '--async-data-buffer-capacity-factor', '1',
                  '--max-weight-staleness', r.MAX_POLICY_LAG, '--update-weights-interval', '1',
                  '--save-debug-event-data', self.result / 'events',
-                 # Hugging Face weights of each saved update, for benchmarking without a conversion.
+                 # Save each checkpoint in HF format too, so it can be benchmarked without conversion.
                  '--save-hf', ROOT / 'checkpoints' / self.result.name / 'hf' / 'iter_{rollout_id}',
                  '--use-tensorboard', '--tb-project-name', self.result / 'tensorboard',
                  '--tb-experiment-name', 'async-mopd', '--no-offload-train', '--no-offload-rollout']
@@ -50,7 +50,7 @@ class MilesNode(ContainerNode):
                       'CAMPAIGN_PYDEPS': os.environ['CAMPAIGN_PYDEPS'],
                       'TENSORBOARD_DIR': str(self.result / 'tensorboard'),
                       'PYTHONPATH': os.environ['PYTHONPATH'], 'NCCL_DEBUG': 'WARN'}
-        # The pinned launcher's default supplies the recipe's learning rate.
+        # No --lr: the launcher's default already equals the recipe's learning rate.
         command = ['scripts/run_mopd_puzzles.py', '--mode', 'student', '--num-nodes', '2',
                    '--fully-async', '--no-colocate', '--use-rollout-logprobs', '--actor-gpus', r.TRAINER_GPUS,
                    '--megatron-path', self.site['megatron_source'], '--rollout-gpus', len(r.POLICY_GPUS),
@@ -64,7 +64,7 @@ class MilesNode(ContainerNode):
                    '--max-response-len', r.MAX_RESPONSE_TOKENS, '--max-tokens-per-gpu', r.MAX_TOKENS_PER_GPU,
                    # A draft </answer> inside the thinking must not end the rollout.
                    '--no-stop-at-answer',
-                   # Also bounds policy generations, which take minutes at 30k tokens.
+                   # This timeout also bounds policy generations, which take minutes at 30k tokens.
                    '--teacher-timeout-seconds', '7200',
                    '--eval-interval', r.EVAL_INTERVAL, '--save-interval', r.SAVE_INTERVAL,
                    '--no-cleanup-processes', '--no-sparse-scoring', '--extra-env-vars', json.dumps(worker_env),

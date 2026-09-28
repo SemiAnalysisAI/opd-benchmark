@@ -1,9 +1,9 @@
 """Miles reward hook: score with the routed frozen teacher, retrying transient transport errors.
 
-Evaluation samples use the shared task verifier instead. Training samples also get the verifier's
-score as `metadata["raw_reward"]`, which Miles logs per step as `rollout/raw_reward` in place of the
-teacher reward's constant 0; the OPD loss reads the teacher reward, not this. Every teacher attempt is
-recorded in `teacher-latency-<pid>.jsonl`.
+Evaluation samples are scored by the shared task verifier instead. Training samples also store the
+verifier score in `metadata["raw_reward"]`, so Miles logs it as `rollout/raw_reward` instead of the
+teacher reward's constant 0. The OPD loss ignores it. Each teacher attempt is appended to
+`teacher-latency-<pid>.jsonl`.
 """
 import asyncio
 import json

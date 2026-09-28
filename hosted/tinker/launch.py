@@ -2,15 +2,17 @@
 
 Full campaign: evaluate the base model, train one GRPO teacher per domain
 (stopping at its goal), select the teachers, train a fresh MOPD student, and
-write the report. With --teachers sft, each teacher is instead a LoRA SFT on
-the released traces of the frozen recipe.TEACHERS (hosted/opd/sft.py), and the base model
-and teachers get the 100-problem x 3-sample benchmark. --sft-config JSON changes
-sft.py settings, for every stage or per domain (see sft_arguments). With --teachers-only, stop
-once the teachers are selected. With --teacher-campaign, reuse that campaign's
-selected teachers and train only the student.
+write the report.
 
-The key comes from $TINKER_API_KEY, or from the `~/.zprofile` label in
-config/tinker.local.json. If that file sets expected_email and expected_org,
+--teachers sft: each teacher is instead a LoRA SFT on the released traces of the
+frozen recipe.TEACHERS (hosted/opd/sft.py), and the base model and teachers get the
+100-problem x 3-sample benchmark. --sft-config passes sft.py settings as JSON, for
+every stage or per domain (see sft_arguments).
+--teachers-only: stop once the teachers are selected.
+--teacher-campaign: reuse that campaign's selected teachers and train only the student.
+
+The API key comes from $TINKER_API_KEY, or from the `~/.zprofile` line named by
+api_key_profile_label in config/tinker.local.json. If that file sets expected_email and expected_org,
 any other account is refused. Every stage runs from a snapshot of the code and
 data in <root>/source-repo; model weights stay remote.
 """
@@ -30,10 +32,10 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from shared.credentials import api_key, local_config  # noqa: E402
 
-# Operational own-domain dev accuracy goals (greedy, full dev split). They are set just below
-# the research GRPO teachers' held-out scores (caesar_cipher 73.3%, simple_geometry 99.8%;
-# research/mopd-2026-09-25/README.md), not a verified match of the frozen recipe.TEACHERS.
-# A teacher stops at its first scheduled evaluation meeting its goal, or after run.py's TEACHER steps.
+# Operational own-domain dev accuracy goals (greedy, full dev split), set just below the released
+# GRPO teachers' held-out scores (caesar_cipher 73.3%, simple_geometry 99.8%). Meeting them does not
+# show a match with the frozen recipe.TEACHERS. A teacher stops at its first scheduled evaluation
+# that meets its goal, or after run.py's TEACHER['steps'] updates.
 TEACHER_GOALS = {'caesar_cipher': 0.70, 'simple_geometry': 0.95}
 SFT_SCRIPT = '../opd/sft.py'  # --teachers sft runs hosted/opd/sft.py on its Tinker backend.
 
@@ -97,7 +99,7 @@ def select_teachers(root):
     assert len(set(routes.values())) == len(routes)
     report = {'rule': 'First scheduled checkpoint reaching provisional goal; otherwise highest own-domain dev score, earliest on ties.',
         'original_teacher_quality_match_verified': False,
-        'target_source': 'Operational goals below the research GRPO teachers\' held-out scores; not a verified quality match.',
+        'target_source': 'Operational goals below the released GRPO teachers\' held-out scores; not a verified quality match.',
         'selected': selected}
     write_selection(root, report, routes)
 

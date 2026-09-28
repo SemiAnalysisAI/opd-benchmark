@@ -26,12 +26,12 @@ LORA_RANK = 64
 SEED = 20260921
 SEED_STRIDE = 100_000  # Sampling seed: SEED + step * SEED_STRIDE + request index.
 CONCURRENCY = 32
-# Teacher GRPO from research/rl-teachers-2026-09-24/rl.template.toml: 32 prompts x 8 responses, at most
-# 200 updates, evaluation every 25, no weight decay, LR 1e-6 there (10x for LoRA here).
+# Teacher GRPO settings of the recipe.TEACHERS runs: 32 prompts x 8 responses, at most 200 updates,
+# evaluation every 25, no weight decay. Their full-finetuning LR of 1e-6 is scaled 10x for LoRA.
 TEACHER_DEFAULTS = {'prompts': 32, 'learning_rate': 1e-5, 'eval_every': 25, 'max_steps': 200, 'target_tolerance': 0}
 TEACHER_GROUP_SIZE = 8
-# Operational greedy dev-accuracy targets, just below the research teachers' held-out scores
-# (caesar_cipher 73.3%, simple_geometry 99.8%); not a verified match of recipe.TEACHERS.
+# Operational greedy dev-accuracy targets, just below the held-out scores of recipe.TEACHERS
+# (caesar_cipher 73.3%, simple_geometry 99.8%). Meeting them does not show a match with recipe.TEACHERS.
 TEACHER_TARGETS = {'caesar_cipher': 0.70, 'simple_geometry': 0.95}
 PPO_CLIP = {'clip_low_threshold': 0.8, 'clip_high_threshold': 1.2}
 TEACHER_ADAM = {'beta1': 0.9, 'beta2': 0.98, 'eps': 1e-8, 'weight_decay': 0.0, 'grad_clip_norm': 1.0}

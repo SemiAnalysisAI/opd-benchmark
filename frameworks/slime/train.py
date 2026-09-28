@@ -1,6 +1,6 @@
-"""The Slime recipe: native `train_async.py` arguments built from `shared.recipe`.
+"""Slime recipe: native `train_async.py` arguments built from `shared.recipe`.
 
-Run by the learner role. The argument list is retained as `argv.json`.
+Run by the learner role. The argument list is saved as `argv.json`.
 """
 import json
 import os
@@ -10,13 +10,13 @@ import sys
 from shared import recipe
 from shared.slurm import DATA, ROOT, eval_config, result_dir, site
 
-# Environment that Ray workers need for the hooks, logging and process groups.
+# Variables Ray workers need for the hooks, logging and process groups.
 RAY_WORKER_ENV = ('CAMPAIGN_RESULT', 'CAMPAIGN_ROOT', 'CAMPAIGN_TEACHER_URLS', 'CAMPAIGN_PYDEPS', 'PYTHONPATH', 'TENSORBOARD_DIR',
                   'NCCL_DEBUG', 'CUDA_DEVICE_MAX_CONNECTIONS', 'SLIME_NATIVE_PROCESS_GROUPS')
 
 
 def model_args():
-    """`MODEL_ARGS` from Slime's own script for the Qwen3.5/3.6 MoE architecture."""
+    """`MODEL_ARGS` from Slime's model script for the Qwen3.5/3.6 MoE architecture."""
     script = ROOT / 'source/scripts/models/qwen3.5-35B-A3B.sh'
     output = subprocess.check_output(['bash', '-c', 'source "$1"; printf "%s\\0" "${MODEL_ARGS[@]}"', 'bash', script])
     return output.decode().rstrip('\0').split('\0')
@@ -29,7 +29,7 @@ def build(result):
             '--hf-checkpoint', s['base_model'], '--ref-load', s['megatron_model'],
             '--save', ROOT / 'checkpoints' / result.name, '--save-interval', r.SAVE_INTERVAL,
             '--no-save-optim', '--no-save-rng',
-            # Hugging Face weights of each saved update, for benchmarking without a conversion.
+            # Save each checkpoint in HF format too, so it can be benchmarked without conversion.
             '--save-hf', ROOT / 'checkpoints' / result.name / 'hf' / 'iter_{rollout_id}',
             # Data and rollout.
             '--prompt-data', DATA / r.TRAIN_FILE, '--input-key', 'prompt', '--label-key', 'label',

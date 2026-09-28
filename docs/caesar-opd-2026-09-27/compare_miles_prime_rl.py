@@ -1,7 +1,8 @@
-"""Miles (965) against Prime-RL on upstream defaults (1017), with Prime-RL's first run (968) as a dashed reference.
+"""Compare Miles' first run (965) with Prime-RL on upstream defaults (1017), plus Prime-RL's first run (968) dashed.
 
-Usage: `uv run --with matplotlib python docs/caesar-opd-2026-09-27/compare_miles_prime_rl.py`; writes
-`figures/miles_vs_prime_rl.png` from `data/`.
+    uv run --with matplotlib python docs/caesar-opd-2026-09-27/compare_miles_prime_rl.py
+
+Reads `data/` and writes `figures/miles_vs_prime_rl.png`.
 """
 import json
 
@@ -10,13 +11,14 @@ import matplotlib.pyplot as plt
 from build_charts import DATA, INK, INK_2, MUTED, SURFACE, end_labels, save
 
 MILES, PRIME, PRIME_OLD = 'miles-965', 'prime-rl-1017', 'prime-rl-968'
-STYLE = {  # Colors match the report's figures; the first run is a muted, dashed reference.
+STYLE = {  # Same colors as build_charts.py; Prime-RL's first run is grey and dashed.
     MILES: dict(label='Miles', color='#2a78d6', linestyle='-'),
     PRIME: dict(label='Prime-RL (defaults, 1017)', color='#eb6834', linestyle='-'),
     PRIME_OLD: dict(label='Prime-RL (first run, 968)', color='#b7b6b1', linestyle='--'),
 }
 TEACHER = 'teacher-caesar'
-# Policy-engine generation throughput over the whole run, from the report's GPU table (engine counters).
+# Whole-run policy-engine throughput (k tokens/s) from the engine counters in data/telemetry*.json.
+# Miles is run 965 here (18.3k); the report's GPU table shows the 1021 rerun (18.0k).
 POLICY_TOKENS_PER_S = {MILES: 18.3, PRIME: 40.3, PRIME_OLD: 20.9}
 
 
@@ -36,7 +38,7 @@ def bars(ax, runs, values, fmt, reference=None):
     top = max(values + ([reference] if reference else []))
     for x, value in zip(xs, values):
         ax.text(x, value + 0.02 * top, fmt.format(value), ha='center', va='bottom', color=INK, fontsize=9)
-    if reference:  # Named in the panel title, so the line needs no label of its own.
+    if reference:  # The panel title names the reference line, so it gets no label.
         ax.axhline(reference, color=MUTED, linewidth=1, linestyle=':')
     ax.set_xticks(list(xs), [STYLE[r]['label'].replace(' (', '\n(') for r in runs], fontsize=8.5)
     ax.set_ylim(0, top * 1.18)

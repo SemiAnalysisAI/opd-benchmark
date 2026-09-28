@@ -1,12 +1,12 @@
-"""The NeMo-RL recipe: MOPD on async GRPO with NeMo Gym rollouts, from `shared.recipe`.
+"""NeMo-RL recipe: MOPD on async GRPO with NeMo Gym rollouts, built from `shared.recipe`.
 
-Usage: `make_config.py RESULT_DIR` (run by `node.py`). Writes `nemo-gym-data/{train,validation}.jsonl`
+Usage: `make_config.py RESULT_DIR` (called by `node.py`). Writes `nemo-gym-data/{train,validation}.jsonl`
 and `nemo-rl.yaml` (JSON, which is valid YAML) into the result directory.
 
-The config inherits upstream's base GRPO config and takes its algorithm settings from upstream
-`examples/configs/recipes/llm/mopd-qwen3-1.7b-3n8g-megatron-pack.yaml` (the MOPD reference recipe)
-and its Qwen3.5 settings from `grpo-qwen3.5-35ba3b-2n8g-megatron-ep16tp2cp2.yaml` (except its eager vLLM, see below). MOPD's teacher and
-vLLM generation each take a whole node, so the layout is three nodes: trainer, vLLM, teacher.
+The config extends upstream's base GRPO config. Algorithm settings come from the MOPD reference recipe,
+`examples/configs/recipes/llm/mopd-qwen3-1.7b-3n8g-megatron-pack.yaml`; Qwen3.5 settings come from
+`grpo-qwen3.5-35ba3b-2n8g-megatron-ep16tp2cp2.yaml`, except its eager vLLM (see `vllm_cfg`). MOPD gives the
+teacher and vLLM generation a whole node each, so there are three nodes: trainer, vLLM and teacher.
 """
 import json
 from pathlib import Path
@@ -20,7 +20,7 @@ AGENT = 'reasoning_gym_simple_agent'  # NeMo Gym's reasoning_gym agent (resource
 
 
 def gym_rows(name):
-    """Packaged rows in NeMo Gym's reasoning_gym format, keeping the exact chat messages."""
+    """Convert packaged rows to NeMo Gym's reasoning_gym format, keeping the chat messages as is."""
     for line in (DATA / name).read_text().splitlines():
         row = json.loads(line)
         entry = json.loads(row['label'])
@@ -73,11 +73,11 @@ def recipe_input(result, data, s):
             'generation': {
                 'max_new_tokens': r.MAX_RESPONSE_TOKENS, 'temperature': 1.0, 'top_p': 1.0,
                 'vllm_cfg': {
-                    # Single-GPU engines: with TP2, the first trainer-to-vLLM weight sync deadlocked twice (the
-                    # receive never reached vLLM's Ray TP executor); TP1 has no multi-GPU executor.
+                    # TP1: with TP2 the first trainer-to-vLLM weight sync deadlocked twice, with the receive
+                    # never reaching vLLM's Ray TP executor. TP1 avoids that executor, though the sync still hung (see repro/README.md).
                     'async_engine': True, 'tensor_parallel_size': 1,
-                    # CUDA graphs on (the base config's default). Upstream's Qwen3.5 recipes set enforce_eager for
-                    # generations of at most 4k tokens; at 30k-token thinking eager decoding took ~21 min per rollout.
+                    # CUDA graphs stay on (the base config's default). Upstream's Qwen3.5 recipes set enforce_eager,
+                    # but they generate at most 4k tokens; at 30k thinking tokens eager decoding took ~21 min per rollout.
                     'gpu_memory_utilization': 0.8, 'max_model_len': r.CONTEXT_LENGTH, 'enforce_eager': False,
                     'expose_http_server': True,
                     'http_server_serving_chat_kwargs': {'enable_auto_tools': True, 'tool_parser': 'hermes',
@@ -105,7 +105,7 @@ def recipe_input(result, data, s):
             'default_teacher_alias': 'default_teacher', 'strict_agent_name_match': False,
             'deduplicate_shared_teacher_checkpoints': True,
             'non_colocated_teachers': {'enabled': True, 'default_teacher_cfg': {
-                # One GPU, as the other frameworks serve the teacher; MOPD still reserves its whole node.
+                # One GPU, as in the other frameworks; MOPD still reserves the whole node.
                 'tensor_model_parallel_size': 1, 'pipeline_model_parallel_size': 1, 'context_parallel_size': 1,
                 'num_nodes': 1, 'gpus_per_node': 1, 'precision': 'bf16', 'micro_batch_size': 1}},
         },

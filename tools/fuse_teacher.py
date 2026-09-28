@@ -5,9 +5,10 @@
 The GRPO teachers on the Hub are Prime-RL weight broadcasts: each MoE expert is its
 own module (`experts.N.{gate,up,down}_proj.weight`) and the untrained MTP head is
 absent. The base Qwen3.6 checkpoint fuses each layer's experts into
-`experts.gate_up_proj` [E, 2I, H] and `experts.down_proj` [E, H, I]. This writes every
-base tensor: trained tensors (experts re-fused) plus the base's MTP tensors, then
-copies the teacher's config and tokenizer files. Needs torch and safetensors.
+`experts.gate_up_proj` [E, 2I, H] and `experts.down_proj` [E, H, I]. The output has
+exactly the base's tensors: the teacher's weights with experts re-fused, plus the
+base's MTP head. The teacher's other files (config, tokenizer) are copied as is.
+Needs torch and safetensors.
 """
 from collections import defaultdict
 import json

@@ -1,8 +1,9 @@
-"""Two-node Pyxis container campaigns, shared by Miles and Slime.
+"""Two-node Pyxis container campaigns for Miles and Slime.
 
-`node.py` with no argument is the controller: it owns the Slurm allocation
-and starts one container step per node, `node.py learner` and
-`node.py generation`. The roles coordinate through ready files:
+`node.py` with no argument is the controller: it holds the Slurm allocation
+and starts one container step per node, `node.py learner` on the trainer node
+and `node.py generation` on the generation node. The roles coordinate through
+ready files in the result directory:
 
     learner (trainer node)            generation (generation node)
     ray head, head-started.json  -->  ray start --address=head
@@ -32,7 +33,7 @@ BASE_MODEL = ROOT / 'models' / recipe.BASE_MODEL_DIR
 
 
 def entry(framework, node_class):
-    """`node.py` → controller; `node.py ROLE` → that role inside its container."""
+    """Run the controller for `node.py`, or the role for `node.py ROLE`."""
     return control(framework) if len(sys.argv) == 1 else node_class(sys.argv[1]).main()
 
 
@@ -56,7 +57,7 @@ def control(framework):
 class ContainerNode:
     """One role inside its container. Frameworks override the three hooks below."""
 
-    placement_module = None  # Module providing the framework's `_create_placement_group`.
+    placement_module = None  # Module that defines the framework's `_create_placement_group`.
     env = {}  # Extra environment for every process in the container.
 
     def __init__(self, role):
@@ -70,7 +71,7 @@ class ContainerNode:
         """Adjust the container before anything starts."""
 
     def placement(self, group):
-        """Return (sorted physical GPU ids, Ray placement group) from the framework's group."""
+        """Return (sorted physical GPU ids, Ray placement group) for the framework's placement result."""
         raise NotImplementedError
 
     def train_command(self, teacher_urls):
@@ -79,7 +80,7 @@ class ContainerNode:
 
     def main(self):
         os.chdir(ROOT / 'source')
-        # The placement check runs in this process: import the pinned framework, not the image's own copy.
+        # The placement check imports the framework in this process; use the pinned source, not the image's copy.
         sys.path.insert(0, str(ROOT / 'source'))
         self.setup()
         os.environ.update({
@@ -89,8 +90,8 @@ class ContainerNode:
             'RAY_DEDUP_LOGS': '0', 'TENSORBOARD_DIR': str(self.result / 'tensorboard'), 'CAMPAIGN_PYDEPS': str(PYDEPS),
             **CACHE_ENV, **self.env})
         if self.role == 'learner':
-            # At 32k the Megatron trainer runs out of memory from fragmentation without this.
-            # It is set on the trainer node only; the SGLang engines run on the generation node.
+            # Without this the Megatron trainer runs out of memory at 32k from fragmentation.
+            # Trainer node only; the SGLang engines on the generation node keep the default allocator.
             os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
         os.environ.pop('NETRC', None)
         exit_on_signals()
@@ -144,7 +145,7 @@ class ContainerNode:
         return 0
 
     def serve_teacher(self, domain, port):
-        """A frozen teacher scores student responses by prefill only; it never generates."""
+        """Start one frozen teacher. It only prefills student responses to score them; it never generates."""
         self.processes.launch([
             sys.executable, '-m', 'sglang.launch_server', '--model-path', ROOT / 'teachers' / domain,
             '--tokenizer-path', BASE_MODEL, '--host', '0.0.0.0', '--port', port, '--tp-size', '1',
@@ -154,6 +155,7 @@ class ContainerNode:
             '--enable-metrics'], f'teacher-{domain}', {'CUDA_VISIBLE_DEVICES': str(recipe.TEACHER_GPU[domain])})
 
     def wait_until(self, attempt, what, timeout=180):
+        """Retry `attempt` until it stops raising OSError, failing fast if a child exits."""
         deadline = time.monotonic() + timeout
         while True:
             try:
@@ -165,7 +167,7 @@ class ContainerNode:
                 time.sleep(2)
 
     def verify_placement(self, generation_ip):
-        """Check that the framework puts the trainer and policy on the intended physical GPUs."""
+        """Check that the framework places the trainer and policy on the intended physical GPUs."""
         import ray
         from ray.util import remove_placement_group
 

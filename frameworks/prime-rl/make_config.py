@@ -1,8 +1,7 @@
-"""The Prime-RL recipe and its component configs for the two-node layout.
+"""Prime-RL recipe and per-component configs for the two-node layout.
 
-Usage: `make_config.py RESULT_DIR` (run by `node.py`). `recipe_input` is the
-experiment in Prime-RL's own schema; `main` validates it and writes one config
-per component that `node.py` launches.
+Usage: `make_config.py RESULT_DIR` (called by `node.py`). `recipe_input` is the experiment in
+Prime-RL's schema; `main` validates it and writes one config per component that `node.py` launches.
 """
 
 import json
@@ -53,14 +52,15 @@ def task_source(domain, split, teachers, generation_ip):
 
 
 def recipe_input(result, s):
-    """The Prime-RL recipe. The resolver sizes components from the logical GPU budget below.
+    """The experiment in Prime-RL's schema; the resolver sizes components from the GPU budget.
 
-    Everything not set here is Prime-RL's default. Set are only the shared recipe (updates, lengths, batch,
-    learning rate, weight decay 0, policy lag, thinking, evaluation), the two-node layout (GPU budget, ports,
-    NCCL weight broadcast, three TP2 policy engines) and the per-domain OPD teachers. The student is trained as
-    a text model (no `model.vlm`, as README.md lists Qwen3.5 MoE), so the trainer keeps its default fp32
-    master weights and reductions; `model.vlm` would require bf16 for both. The frozen vision encoder then runs in
-    fp32, which FlashAttention 4 rejects; the package's source patch gives it SDPA (see upstream/manifest.json).
+    Only the shared recipe, the two-node layout (GPU budget, ports, NCCL weight broadcast, three TP2
+    policy engines) and the per-domain OPD teachers are set; everything else is Prime-RL's default.
+
+    The student is trained as a text model (no `model.vlm`; upstream's README lists Qwen3.5 MoE), so the
+    trainer keeps fp32 master weights and reductions, which `model.vlm` would force to bf16. The frozen
+    vision encoder then runs in fp32, which FlashAttention 4 rejects; the source patch switches it to
+    SDPA (see upstream/manifest.json).
     """
     generation_ip = s['generation_ip']
     sources = {split: [task_source(d, split, s['teachers'], generation_ip) for d in recipe.DOMAINS]
@@ -107,9 +107,9 @@ def teacher_input(domain, result, s):
         'output_dir': str(result / f'teacher-{domain}'),
         'vllm': {'model': f'{s["teachers"]}/{domain}', 'tensor_parallel_size': 1,
                  'data_parallel_rpc_port': port + RPC_PORT_OFFSET, 'max_model_len': recipe.CONTEXT_LENGTH,
-                 # As upstream's OPD example starts its teacher (configs/debug/algo/opd.toml). At the default 0.9 the
-                 # teacher ran out of memory: the fp32 prompt logprobs of one 9.8k-token sample need 8.8 GiB
-                 # outside vLLM's profiled budget (job 1016).
+                 # As in upstream's OPD example (configs/debug/algo/opd.toml). At the default 0.9 the teacher
+                 # ran out of memory: fp32 prompt logprobs for one 9.8k-token sample need 8.8 GiB outside
+                 # vLLM's profiled budget (job 1016).
                  'gpu_memory_utilization': 0.5, 'enforce_eager': True},
     }
 
@@ -130,8 +130,8 @@ def main(result):
     (config_dir / 'rl.json').write_text(json.dumps(dump_resolved_config(config), indent=2))
     write_subconfigs(config, config_dir)
 
-    # The aggregate resolver represents six workers. Each executable engine is an
-    # independent TP2/DP1 group because vLLM folds MoE DP into TP when EP is off.
+    # The aggregate inference config (six GPUs) only feeds the resolver. Each engine runs as its own
+    # TP2/DP1 server, because vLLM folds MoE DP into TP when EP is off.
     replicas = []
     for index, port in enumerate(POLICY_PORTS):
         replica_raw = dump_resolved_config(config.inference)

@@ -1,7 +1,9 @@
-"""Prepare one isolated campaign directory; campaign processes read `site.json` at runtime.
+"""Prepare a self-contained campaign directory for one framework. Nothing is submitted.
 
-It receives the patched upstream source, the verified datasets, the shared
-`shared` package, the framework's campaign files, and links to the models.
+The directory gets the upstream source at its pinned revision with the patch applied,
+the verified datasets, a copy of `shared/`, the framework's campaign files, `launch.py`
+(a copy of tools/submit.py), links to the models, and `site.json`, which campaign
+processes read at runtime.
 """
 import argparse
 import hashlib
@@ -60,7 +62,7 @@ def materialize_data(destination):
 
 
 def campaign_files(framework):
-    """(source, relative target) for every file a campaign receives: `shared/`, then the framework's files."""
+    """(source, target relative to the campaign) for `shared/` and the framework's campaign files."""
     files = [(p, Path('shared') / p.name) for p in sorted(PACKAGE.glob('*.py'))]
     framework_dir = REPO / 'frameworks' / framework
     return files + [(p, p.relative_to(framework_dir)) for p in sorted(framework_dir.rglob('*'))
@@ -110,11 +112,12 @@ def prepare(framework, site, output, source_cache=None, domains=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('framework', choices=FRAMEWORKS)
-    parser.add_argument('--site', type=Path, default=REPO / 'config/site.local.json', help='Default: config/site.local.json')
-    parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--source-cache', type=Path, help='Optional local Git clone; the recorded revision is still enforced')
+    parser.add_argument('--site', type=Path, default=REPO / 'config/site.local.json',
+                        help='site file (default: config/site.local.json)')
+    parser.add_argument('--output', type=Path, required=True, help='campaign directory; must not exist')
+    parser.add_argument('--source-cache', type=Path, help='local Git clone to clone from; the pinned revision still applies')
     parser.add_argument('--domains', nargs='+', choices=recipe.ALL_DOMAINS,
-                        help='Train on these tasks only, for example `caesar_cipher` for single-teacher OPD')
+                        help='one task for single-teacher OPD, e.g. caesar_cipher (default: all)')
     args = parser.parse_args()
     if args.domains and len(args.domains) != 1 and tuple(args.domains) != recipe.ALL_DOMAINS:
         parser.error(f'--domains takes one task or all of {recipe.ALL_DOMAINS} in order')

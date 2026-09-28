@@ -1,7 +1,7 @@
 """Summarize OPD and MOPD runs: quality, throughput, time breakdown, and a cost estimate.
 
     python hosted/opd/report.py RUN_DIR [RUN_DIR ...] --output REPORT_DIR \\
-        [--teachers-campaign hosted/tinker SFT campaign dir]
+        [--teachers-campaign SFT campaign dir from hosted/tinker/launch.py]
 
 Writes REPORT.md (every chart's numbers are also a table there), summary.json, and PNG/SVG
 figures. Only the retained run records are read; nothing is re-sampled. With
@@ -17,7 +17,7 @@ import statistics
 # Illustrative only: not an invoice, and prefill caching is ignored.
 PRICE = {'sampled': 1.335, 'prefill': 0.54, 'trained': 1.177}
 DOMAINS = ('caesar_cipher', 'simple_geometry')
-# Reference palette (dataviz skill), light surface; validated for three slots, all pairs.
+# Chart colors for a light background; the three series colors are distinguishable from each other.
 SURFACE, INK, MUTED, GRID = '#fcfcfb', '#0b0b0b', '#52514e', '#e4e3df'
 SERIES = ['#2a78d6', '#eb6834', '#1baf7a']
 NEUTRAL = '#a8a7a2'  # "Other"-style remainder, not a series hue.
@@ -39,7 +39,7 @@ def load(run):
 
 
 def references(campaign):
-    """Base and SFT-teacher scores on the same 100 x 3 benchmark, from a hosted/tinker SFT campaign."""
+    """Base and SFT-teacher scores on the same 100 x 3 benchmark, from an SFT campaign of hosted/tinker/launch.py."""
     if not campaign:
         return {}
     campaign = Path(campaign)

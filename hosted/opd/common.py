@@ -234,7 +234,7 @@ class Experiment:
                 'stop_reason': sequence.stop_reason, 'submitted': begin - t0, 'sampled': sampled - t0,
                 'scored': scored - t0}
 
-    # Evaluation: the teacher benchmark protocol (hosted/tinker/sft.py) on every recipe domain,
+    # Evaluation: the teacher benchmark protocol (hosted/opd/sft.py) on every recipe domain,
     # including domains this run does not train on.
 
     def evaluate(self, student, update):

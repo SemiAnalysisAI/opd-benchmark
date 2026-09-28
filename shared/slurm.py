@@ -1,8 +1,8 @@
-"""Paths, site values and process supervision for one prepared campaign.
+"""Paths, site values, process supervision and the Slurm allocation for a prepared campaign.
 
 `tools/prepare.py` copies this package to `<campaign>/shared/` and writes
 `<campaign>/site.json`. Processes coordinate through files in the result
-directory: `*-ready.json` files announce readiness and `STOP` asks all to exit.
+directory: ready files announce each stage, and `STOP` tells every process to exit.
 """
 import json
 import os
@@ -18,13 +18,13 @@ DATA = ROOT / 'data'
 PYDEPS = ROOT / 'pydeps'  # reasoning-gym for the scorer; see shared/scoring.py.
 STOP_FILE = 'STOP'
 STOP_EXIT_CODE = 143  # 128 + SIGTERM, as for a scheduler cancellation.
-# Top-level campaign entries that are outputs, weight links or caches, not launch source.
-# Compiled kernels (Triton, Inductor, FlashInfer, vLLM, SGLang) persist here, shared by both nodes and
-# every run of the campaign, so GPUs do not wait on a cold compile after the first run.
+# Compiled kernels (Triton, Inductor, FlashInfer, vLLM, SGLang), shared by both nodes and every run
+# of the campaign, so only the first run pays for a cold compile.
 CACHE = ROOT / 'runtime-cache'
 CACHE_ENV = {'TRITON_CACHE_DIR': str(CACHE / 'triton'), 'TORCHINDUCTOR_CACHE_DIR': str(CACHE / 'inductor'),
              'FLASHINFER_WORKSPACE_BASE': str(CACHE), 'VLLM_CACHE_ROOT': str(CACHE / 'vllm'),
              'SGLANG_CACHE_DIR': str(CACHE / 'sglang')}
+# Top-level campaign entries left out of each run's launch-source archive: outputs, weight links and caches.
 NOT_ARCHIVED = {'results', 'checkpoints', 'models', 'teachers', 'wheels', 'uv-cache', 'runtime-cache',
                 'allocation.out', 'submission.lock', 'active-run.json'}
 
@@ -50,7 +50,7 @@ def exit_on_signals(code=STOP_EXIT_CODE):
 
 
 def eval_config(metadata_overrides=None):
-    """Development evaluation in the Slime/Miles `--eval-config` format.
+    """Greedy dev-set evaluation in the Miles/Slime `--eval-config` format.
 
     Datasets inherit the training chat-template kwargs, so evaluation also runs with thinking on.
     """
@@ -63,7 +63,11 @@ def eval_config(metadata_overrides=None):
 
 
 class Supervisor:
-    """Owned children, each in its own process group so that stopping it stops its descendants."""
+    """Child processes, each in its own process group so that stopping one also stops its descendants.
+
+    Each child's command is recorded in `<prefix><name>-command.json`; its output goes to
+    `<prefix><name>.out` unless `launch` is given another log.
+    """
 
     def __init__(self, result, prefix='', base_env=None):
         self.result, self.prefix, self.base_env = Path(result), prefix, base_env
@@ -87,6 +91,7 @@ class Supervisor:
                 raise RuntimeError(f'{name} exited with {process.returncode}; inspect its log')
 
     def wait_for_file(self, name, timeout=900):
+        """Wait for a ready file in the result directory and return its contents."""
         deadline = time.monotonic() + timeout
         while not (self.result / name).exists():
             self.check()
@@ -103,7 +108,7 @@ class Supervisor:
         return self.children[name].returncode
 
     def stop_all(self, grace=0, timeout=8):
-        """Allow `grace` seconds for a clean exit, then terminate, then kill."""
+        """Wait up to `grace` seconds for a clean exit, then SIGTERM, then SIGKILL after `timeout`."""
         processes = list(self.children.values())
         deadline = time.monotonic() + grace
         while any(p.poll() is None for p in processes) and time.monotonic() < deadline:
@@ -127,10 +132,11 @@ def _signal_group(process, number):
 
 
 class Allocation:
-    """One two-node Slurm allocation: records, one step per role, and shutdown.
+    """One campaign run inside a Slurm allocation: run records, per-role steps and shutdown.
 
-    The learner's exit status becomes the allocation's status. The generation
-    role serves the learner, so its early exit is a failure.
+    Two nodes, or three when the site file names a `teacher_node` (NeMo-RL).
+    In `run`, the learner's exit status becomes the run's status; the generation
+    role only serves the learner, so an early exit there is a failure.
     """
 
     def __init__(self, framework):
@@ -139,6 +145,7 @@ class Allocation:
         self.result = ROOT / 'results' / f'{framework}-{self.job}'
 
     def start(self, **details):
+        """Create the result directory, check the nodes, and record the job and its launch source."""
         self.result.mkdir(parents=True, exist_ok=False)
         nodes = subprocess.check_output(['scontrol', 'show', 'hostnames', os.environ['SLURM_JOB_NODELIST']],
                                         text=True).split()

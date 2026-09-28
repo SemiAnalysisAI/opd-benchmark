@@ -2,15 +2,15 @@
 
     python3 tools/report.py RESULT_DIR [RESULT_DIR ...] [--output report.json]
 
-Reads each run's `start.json`, `end.json` and `<role>-capture.jsonl.gz` (written by
-`shared/capture.py`) and reports, per role: GPU utilization, memory and power for every
-GPU, energy, host CPU utilization, network traffic, and the token throughput of every
-captured SGLang or vLLM engine (from its Prometheus token counters). A capture cut off by a
-cancelled run is read up to its last complete row.
+Reads each run's `start.json`, `end.json` and `<role>-capture.jsonl.gz` files (from
+`shared/capture.py`) and reports per role: utilization, memory, power and energy for
+every GPU, host CPU utilization, network traffic, and the token throughput of every
+captured SGLang or vLLM engine. A capture cut off by a cancelled run is read up to its
+last complete row.
 
-It also reads each framework's own per-update metrics (the Miles and verl driver logs,
-Prime-RL's `monitors/file/metrics.jsonl`) into the common fields of `UPDATE_FIELDS`.
-Standard library only.
+Per-update metrics come from each framework's own output (the Miles, Slime and verl
+training logs, Prime-RL's `monitors/file/metrics.jsonl`) and are mapped onto the common
+fields in `UPDATE_FIELDS`. NeMo-RL runs get telemetry only. Standard library only.
 """
 import argparse
 import ast
@@ -25,7 +25,7 @@ TOKEN_COUNTERS = {'generation': ('sglang:generation_tokens_total', 'vllm:generat
                   'prompt': ('sglang:prompt_tokens_total', 'vllm:prompt_tokens_total')}
 
 
-# Common per-update fields and each framework's metric for them.
+# Common per-update fields and the metric each framework logs for them.
 UPDATE_FIELDS = {
     'step_s': {'miles': 'perf/step_time', 'slime': 'perf/step_time', 'verl': 'timing_s/step', 'prime-rl': 'time/step'},
     'train_s': {'miles': 'perf/train_time', 'slime': 'perf/train_time', 'verl': 'timing_s/update_actor',
@@ -40,8 +40,8 @@ UPDATE_FIELDS = {
                              'verl': 'response_length/mean', 'prime-rl': 'train/agg/all/num_output_tokens/mean'},
     'reverse_kl': {'miles': 'train/opd_reverse_kl', 'slime': 'rollout/opd_reverse_kl', 'verl': 'actor/distillation/loss',
                    'prime-rl': 'ref_kl/mean'},
-    # Miles logs no verifier score or stale-drop count for OPD training rollouts; Slime's raw reward is the
-    # package's task score, and its one-rollout-ahead mode drops nothing.
+    # Through the package's hooks, Miles and Slime log the task score as rollout/raw_reward.
+    # Miles logs no stale-drop count; Slime's one-rollout-ahead mode drops nothing.
     'train_score': {'miles': 'rollout/raw_reward', 'slime': 'rollout/raw_reward', 'verl': 'critic/score/mean',
                     'prime-rl': 'train/agg/all/agent/reward/mean'},
     'dropped_stale': {'verl': 'fully_async/count/dropped_stale_samples',
@@ -94,7 +94,7 @@ def update_summary(result, framework):
     if not rows:
         return None
     if framework == 'miles' and not any(r['train_score'] for r in rows):
-        # Before the package's reward hook set metadata['raw_reward'], Miles logged its OPD reward, a constant 0.
+        # Runs from before the reward hook set metadata['raw_reward'] logged the teacher reward, a constant 0.
         for row in rows:
             row['train_score'] = None
 
@@ -117,6 +117,7 @@ def update_summary(result, framework):
 
 
 def capture_rows(path):
+    """Rows of one capture file, up to the last complete one."""
     rows = []
     try:
         with gzip.open(path, 'rt') as stream:
@@ -230,8 +231,8 @@ def summarize(result):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('results', nargs='+', type=Path)
-    parser.add_argument('--output', type=Path)
+    parser.add_argument('results', nargs='+', type=Path, help='run result directories (<campaign>/results/<run>)')
+    parser.add_argument('--output', type=Path, help='also write the JSON report here')
     args = parser.parse_args()
     reports = [summarize(r) for r in args.results]
     text = json.dumps(reports, indent=2)

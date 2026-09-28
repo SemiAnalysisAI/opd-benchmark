@@ -1,9 +1,8 @@
-"""Prime-RL campaign entry point: `node.py` runs the controller, `node.py ROLE` one node.
+"""Prime-RL entry point: `node.py` runs the controller, `node.py ROLE` runs one node.
 
-Prime-RL runs from the campaign's `source/.venv` on the hosts, not in a
-container. The generation node serves the frozen teachers, three policy
-engines and their router; the trainer node runs the trainer, env servers and
-orchestrator. `make_config.py` holds the recipe and ports.
+Prime-RL runs on the hosts from the campaign's `source/.venv`, not in a container. The generation
+node serves the frozen teachers, three policy engines and their router; the trainer node runs the
+trainer, env servers and orchestrator. `make_config.py` holds the recipe and ports.
 """
 
 import json
@@ -59,7 +58,7 @@ class Node:
         self.config, self.logs = Path(paths['config']), Path(paths['logs'])
         env = {**os.environ, **DEFAULT_COMMON_ENV_VARS, 'WANDB_MODE': 'disabled', 'NCCL_DEBUG': 'WARN',
                'PRL_ATTEMPT_CONFIG_DIR': str(self.config), 'PRL_ATTEMPT_LOG_DIR': str(self.logs), **CACHE_ENV}
-        # Component logs share one directory across both nodes, so names are unique per node.
+        # Both nodes log into one directory, so component names must be unique across nodes.
         self.processes = Supervisor(self.result, base_env=env)
 
     def launch(self, command, name, env=None):
@@ -68,7 +67,7 @@ class Node:
 
     def inference(self, name, gpus):
         from prime_rl.utils.process import DEFAULT_INFERENCE_ENV_VARS
-        # Separate config and log directories keep standalone inference launchers isolated.
+        # Give each standalone inference launcher its own config and log directories.
         root = self.result / name
         self.launch(['inference', '@', self.config / f'{name}.json'], name,
                     {**DEFAULT_INFERENCE_ENV_VARS, 'CUDA_VISIBLE_DEVICES': ','.join(map(str, gpus)),
@@ -79,7 +78,7 @@ class Node:
             self.inference(f'teacher-{domain}', [gpu])
         for index in range(len(config.POLICY_PORTS)):
             self.inference(f'policy-{index}', config.policy_gpus(index))
-        # Upstream's router arguments (`start_router` in prime_rl/entrypoints/inference.py), over the three engines.
+        # Same arguments as upstream's `start_router` (prime_rl/entrypoints/inference.py), over our three engines.
         self.launch(['vllm-router', '--policy', 'consistent_hash', '--host', '0.0.0.0', '--port', config.ROUTER_PORT,
                      '--worker-urls', *(f'http://127.0.0.1:{port}' for port in config.POLICY_PORTS),
                      '--intra-node-data-parallel-size', '1', '--request-id-headers', 'x-session-id',

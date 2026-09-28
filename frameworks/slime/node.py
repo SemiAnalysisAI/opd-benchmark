@@ -1,6 +1,6 @@
-"""Slime campaign entry point: `node.py` runs the controller, `node.py ROLE` one container role.
+"""Slime entry point: `node.py` runs the controller, `node.py ROLE` runs one container role.
 
-The shared two-node runtime is `shared/container.py`; this adds Slime's pins,
+The two-node runtime lives in `shared/container.py`. This file adds Slime's pinned wheels,
 placement format and training driver (`train.py`).
 """
 import json
@@ -17,7 +17,7 @@ class SlimeNode(ContainerNode):
     env = {'CUDA_DEVICE_MAX_CONNECTIONS': '1', 'SLIME_NATIVE_PROCESS_GROUPS': '1'}
 
     def setup(self):
-        # Pinned wheels go into this ephemeral container only; the shared image is unchanged.
+        # Install the pinned wheels into this throwaway container only; the image stays unchanged.
         with (self.result / f'{self.role}-numpy-install.out').open('wb') as log:
             subprocess.run(['sha256sum', '-c', 'wheels.sha256'], cwd=ROOT, stdout=log, stderr=log, check=True)
             subprocess.run([sys.executable, '-m', 'pip', 'install', '--no-deps', '--force-reinstall', '--no-index',

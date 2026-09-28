@@ -20,7 +20,7 @@
   "recorded_run": "prime-opd-407",
   "runtime_validated_on_original_cluster": true,
   "portable_package_gpu_validated": false,
-  "note": "One patch to src/prime_rl/trainer/model.py: a frozen Qwen3.5 vision encoder uses SDPA when text attention is flash_attention_4. Training this VLM checkpoint on text-only data (no model.vlm, fp32 master weights) still runs the frozen encoder on dummy pixels every step, and FA4 rejects its fp32 inputs (job 1015). Upstream switches the encoder to SDPA only under Ulysses CP. recorded_* fields describe the previous experiment (prime-opd-407).",
+  "note": "One patch, to src/prime_rl/trainer/model.py: the frozen Qwen3.5 vision encoder uses SDPA when text attention is flash_attention_4. Training this VLM checkpoint on text-only data (no model.vlm, fp32 master weights) still runs the frozen encoder on dummy pixels every step, and FA4 rejects its fp32 inputs (job 1015). Upstream switches the encoder to SDPA only under Ulysses CP. The recorded_* fields describe the previous run, prime-opd-407.",
   "source_patch_files": [
     "src/prime_rl/trainer/model.py"
   ],

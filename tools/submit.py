@@ -1,4 +1,7 @@
-"""Print a Slurm command by default; submit only when --submit is explicit."""
+"""Print the salloc command for a prepared campaign; with --submit, check prerequisites and run it.
+
+Copied into each campaign as `launch.py`.
+"""
 import argparse
 import hashlib
 import json
@@ -10,11 +13,11 @@ import sys
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('campaign', type=Path)
-    parser.add_argument('--partition', required=True)
-    # Research runs of 20 updates with 30k-token thinking took about an hour after startup.
-    parser.add_argument('--time', default='04:00:00')
-    parser.add_argument('--submit', action='store_true')
+    parser.add_argument('campaign', type=Path, help='prepared campaign directory')
+    parser.add_argument('--partition', required=True, help='Slurm partition')
+    # A 20-update run with 30k-token thinking takes about an hour after startup.
+    parser.add_argument('--time', default='04:00:00', help='Slurm time limit (default: 04:00:00)')
+    parser.add_argument('--submit', action='store_true', help='allocate GPUs instead of printing the command')
     args = parser.parse_args()
     root = args.campaign.resolve()
     site = json.loads((root/'site.json').read_text())
@@ -39,7 +42,7 @@ def main():
         from shared.recipe import DOMAINS
         required = [Path(site['base_model'])/'config.json',
                     *(Path(site['teachers'])/domain/'config.json' for domain in DOMAINS)]
-        if manifest['framework'] == 'nemo-rl':  # Its own container; it scores through NeMo Gym.
+        if manifest['framework'] == 'nemo-rl':  # Own container; scores through NeMo Gym, so no pydeps.
             required += [Path(site['nemo_rl_container'])]
         elif manifest['framework'] in ('prime-rl', 'verl'):  # Host virtual environments.
             required += [root/'pydeps/reasoning_gym', root/'source/.venv/bin/python', Path(site['uv'])]

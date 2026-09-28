@@ -1,4 +1,10 @@
-"""Apply patches to pinned Git archives and check their recorded file hashes."""
+"""Check that each framework's source.patch reproduces the recorded source.
+
+    python3 tools/verify_sources.py [--miles CLONE] [--prime-rl CLONE] [--slime CLONE]
+
+For each local upstream clone given, applies the patch to a `git archive` of the
+pinned revision and compares every changed file with its recorded SHA-256.
+"""
 import argparse
 import hashlib
 import io
@@ -29,9 +35,9 @@ def verify(name, repository):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     for name in ('miles', 'prime-rl', 'slime'):  # verl and NeMo-RL run unmodified.
-        parser.add_argument('--'+name, type=Path)
+        parser.add_argument('--'+name, type=Path, metavar='CLONE', help=f'local {name} Git clone')
     args = vars(parser.parse_args())
     if not any(args.values()):
         parser.error('Provide at least one local upstream Git clone')

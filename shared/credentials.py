@@ -1,9 +1,9 @@
 """API keys and local account settings for the hosted providers.
 
-Anyone can reproduce with an exported `<PROVIDER>_API_KEY`. Teams can instead
-keep account settings in `config/<provider>.local.json` (gitignored; see
-`config/README.md`), including a `~/.zprofile` label so that a key exported for
-another account is never used by accident. Keys are never written or printed.
+By default the key comes from `<PROVIDER>_API_KEY`. Alternatively,
+`config/<provider>.local.json` (gitignored; see `config/README.md`) can name a
+`~/.zprofile` variable to read it from, so a key exported for another account
+is not picked up by accident. Keys are never written or printed.
 """
 import json
 import os
@@ -22,7 +22,7 @@ def local_config(provider, path=None):
 
 
 def api_key(env_name, profile_label=None):
-    """The key from the profile line `profile_label=...` if given, otherwise from `$env_name`."""
+    """Read the key from the `profile_label=...` line in ~/.zprofile if given, otherwise from `$env_name`."""
     if profile_label:
         return profile_secret(profile_label)
     if not os.environ.get(env_name):

@@ -1,9 +1,9 @@
-"""NeMo-RL campaign entry point: `node.py` runs the controller inside the Slurm allocation.
+"""NeMo-RL entry point: `node.py` runs the controller inside the Slurm allocation.
 
-NeMo-RL brings up its multi-node Ray cluster with upstream `ray.sub` (in the pinned source) and places
-its own trainer, vLLM and teacher worker groups on it, so there are no per-role steps here. The
-controller writes the config (`make_config.py`), starts the package's telemetry capture on every node,
-runs `ray.sub` with the driver command, and records the outcome like every other framework.
+NeMo-RL starts its own Ray cluster with upstream's `ray.sub` and places the trainer, vLLM and teacher
+workers itself, so there are no per-role steps. The controller writes the config (`make_config.py`),
+starts telemetry capture on every node, runs `ray.sub` with the driver command, and records the
+exit code like the other frameworks.
 """
 import json
 import os
@@ -15,19 +15,19 @@ from shared import recipe
 from shared.slurm import CACHE_ENV, PYDEPS, ROOT, STOP_FILE, Allocation, Supervisor, exit_on_signals, write_json
 import make_config
 
-# reasoning_gym is installed into NeMo Gym's server venv at runtime; pin the version every other
-# framework's verifier and data use.
+# NeMo Gym installs reasoning_gym into its server venv at run time; pin it to the version the
+# packaged data and verifier use.
 CONSTRAINTS = ROOT / 'nemo-gym-constraints.txt'
 
 
 def driver_command(result):
     revision = json.loads((ROOT / 'package-provenance.json').read_text())['revision']
     return ' '.join([
-        # The container's code must be the pinned revision.
+        # Refuse to run unless the container holds the pinned revision.
         f'[ "$NEMO_RL_COMMIT" = {revision} ] && cd {make_config.UPSTREAM} &&', f'UV_CONSTRAINT={CONSTRAINTS}', 'HF_HUB_OFFLINE=1',
-        # Unbuffered, so the driver's progress lines (including the weight syncs) reach the log as they happen.
+        # Unbuffered, so progress lines (including weight syncs) reach the log immediately.
         'PYTHONUNBUFFERED=1',
-        # The image ships no NeMo Gym server venvs; build them once per campaign, not once per run.
+        # The image ships no NeMo Gym server venvs; build them once per campaign rather than per run.
         f'NEMO_GYM_VENV_DIR={ROOT / "runtime-cache" / "gym_venvs"}',
         'uv run examples/nemo_gym/run_grpo_nemo_gym.py', f'--config {result / "nemo-rl.yaml"}'])
 
@@ -45,10 +45,10 @@ def control():
            'NVIDIA_VISIBLE_DEVICES': 'all', 'NVIDIA_DRIVER_CAPABILITIES': 'all',
            'CONTAINER': s['nemo_rl_container'], 'MOUNTS': ','.join(f'{m}:{m}' for m in mounts),
            'COMMAND': driver_command(result), 'BASE_LOG_DIR': str(result), 'GPUS_PER_NODE': str(recipe.GPUS_PER_NODE),
-           # NeMo-RL writes into its image at runtime (uv syncs the project, vLLM files are patched in place), but
-           # ray.sub's srun steps pass no --container-writable; this is Pyxis' environment form of that flag.
-           # Not ray.sub's UV_CACHE_DIR_OVERRIDE: it mounts over /root/.cache/uv, where the image's venv files are
-           # symlinked, and so empties the venv.
+           # NeMo-RL writes into its image at run time (uv syncs the project, vLLM files are patched in
+           # place), but ray.sub's srun steps omit --container-writable. This variable is Pyxis' env form of
+           # that flag. ray.sub's UV_CACHE_DIR_OVERRIDE does not work: it mounts over /root/.cache/uv, which
+           # the image's venv files are symlinked into, and so empties the venv.
            'PYXIS_CONTAINER_WRITABLE': '1', 'HF_HOME': str(ROOT / 'runtime-cache' / 'hf'),
            **CACHE_ENV}
     exit_on_signals()

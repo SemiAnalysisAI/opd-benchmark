@@ -1,7 +1,7 @@
-"""Slime hooks: route each puzzle domain to its frozen teacher and retain evidence.
+"""Slime OPD hooks: route each domain to its frozen teacher and log samples.
 
-train.py registers these functions with Slime's native OPD path. Task
-scores are recorded as diagnostics; the scalar training reward is zero.
+`train.py` registers these with Slime's native OPD path. Task scores are logged for diagnostics
+only; the scalar training reward is zero.
 """
 
 import copy
@@ -36,6 +36,7 @@ async def reward(args, sample, **kwargs):
     sample.metadata['task_score'] = task_score
     if sample.metadata['campaign_evaluation']:
         return {'task_score': task_score}
+    # Copy args so concurrent requests never overwrite each other's teacher URL.
     selected = copy.copy(args)
     selected.rm_url = json.loads(os.environ['CAMPAIGN_TEACHER_URLS'])[domain]
     started = time.monotonic()
@@ -48,7 +49,7 @@ async def reward(args, sample, **kwargs):
 
 
 def postprocess(args, samples):
-    # Copy args locally so concurrent requests never mutate the shared teacher URL or key.
+    # Copy args rather than change the shared reward key.
     selected = copy.copy(args)
     selected.reward_key = 'opd'
     raw, processed = opd.post_process_rewards(selected, samples)
@@ -56,7 +57,7 @@ def postprocess(args, samples):
     for sample in samples:
         scores = sample.teacher_log_probs
         assert len(scores) == sample.response_length and scores.isfinite().all().item()
-    # Task scores are diagnostic only. Native OPD receives zero scalar task reward.
+    # Task scores are returned as raw rewards for logging; training uses the all-zero processed rewards.
     return [s.metadata['task_score'] for s in samples], processed
 
 
@@ -72,12 +73,11 @@ def log_train(rollout_id, args, samples, rollout_extra_metrics, rollout_time):
     assert len(samples) == recipe.PROMPTS_PER_UPDATE * recipe.SAMPLES_PER_PROMPT
     lags = []
     for sample in samples:
-        # Native distributed broadcast starts at version one for the initial base weights.
         versions = [int(v) for v in sample.weight_versions]
         assert versions, 'SGLang did not return a policy version'
+        # The base weights are version 1 and train_async generates one rollout ahead (policy lag 1),
+        # so this offset count is at most 2.
         sample_lags = [rollout_id + 2 - v for v in versions]
-        # train_async generates exactly one rollout ahead (policy lag 1); with weights starting at
-        # version one, this counter reads at most 2.
         assert all(0 <= lag <= 2 for lag in sample_lags), (rollout_id, versions)
         lags.extend(sample_lags)
         record('train-samples.jsonl', {'rollout_id': rollout_id, **sample_record(sample)})
@@ -87,7 +87,7 @@ def log_train(rollout_id, args, samples, rollout_extra_metrics, rollout_time):
 
 
 def log_eval(rollout_id, args, data, extra_metrics):
-    # The baseline (rollout -1) sees the initial version one; rollout r's evaluation follows its broadcast.
+    # The baseline (rollout -1) sees the base weights (version 1); rollout r is evaluated after its broadcast.
     expected_version = 1 if rollout_id == -1 else rollout_id + 2
     for domain, payload in data.items():
         samples = payload['samples']

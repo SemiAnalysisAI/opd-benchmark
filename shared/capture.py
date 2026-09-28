@@ -1,9 +1,10 @@
-"""The one telemetry process: sample GPUs, host counters and Prometheus metrics.
+"""Sample GPU, host and Prometheus metrics until the campaign stops.
 
-Usage: `python -m shared.capture ROLE [HOST:PORT ...] [--engine-log LOG --engine-host HOST]`.
-Every five seconds it appends one row to `<result>/<ROLE>-capture.jsonl.gz`
-until the campaign stops. `--engine-log` adds the SGLang policy engines that a
-Miles or Slime driver announces in its log. Counters describe the whole node.
+    python -m shared.capture ROLE [HOST:PORT ...] [--engine-log LOG --engine-host HOST]
+
+Every five seconds, appends one row to `<result>/<ROLE>-capture.jsonl.gz`.
+Host counters cover the whole node. `--engine-log` follows a Miles or Slime
+training log and adds each SGLang policy engine it announces as a target.
 """
 import argparse
 import concurrent.futures
@@ -26,7 +27,7 @@ PROC_FILES = ('stat', 'meminfo', 'net/dev', 'diskstats', 'loadavg')
 
 
 def engine_ports(line, host):
-    """Policy-engine ports announced by one Miles or Slime training-log line."""
+    """Ports of the policy engines on `host` announced in one Miles or Slime log line."""
     ports = set()
     if 'sglang.launch_server' in line and '--model-path' in line:
         ports.update(int(v) for v in re.findall(r'--port[ =]+(\d+)', line))
@@ -37,6 +38,7 @@ def engine_ports(line, host):
 
 
 def read(function, *args, **kwargs):
+    """Call `function`, recording a failure in the row instead of stopping the capture."""
     try:
         return function(*args, **kwargs)
     except (OSError, subprocess.SubprocessError) as error:
@@ -49,11 +51,11 @@ def prometheus(target):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('role')
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('role', help='names the output file, e.g. learner or generation')
     parser.add_argument('targets', nargs='*', help='HOST:PORT Prometheus endpoints')
-    parser.add_argument('--engine-log', type=Path)
-    parser.add_argument('--engine-host')
+    parser.add_argument('--engine-log', type=Path, help='training log to scan for policy-engine ports')
+    parser.add_argument('--engine-host', help='host whose engines to scrape from --engine-log')
     args = parser.parse_args()
     result = result_dir()
     targets, offset = set(args.targets), 0

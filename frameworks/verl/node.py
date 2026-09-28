@@ -1,9 +1,8 @@
-"""verl campaign entry point: `node.py` runs the controller, `node.py ROLE` one node.
+"""verl entry point: `node.py` runs the controller, `node.py ROLE` runs one node.
 
-verl runs from the campaign's `source/.venv` on the hosts. Both roles join one Ray
-cluster; verl then places its own resource pools on it: the trainer (8 GPUs) on one
-node, and the policy engines (6 GPUs) and the two frozen teachers (1 GPU each) on the
-other. The learner role runs the driver (`train.py`).
+verl runs on the hosts from the campaign's `source/.venv`. Both roles join one Ray cluster and verl
+places its own resource pools on it: the trainer on one node, the policy engines and frozen teachers
+(one GPU each) on the other. The learner role runs the driver (`train.py`).
 """
 
 import os
@@ -30,8 +29,8 @@ def control():
     env = {**os.environ, 'CAMPAIGN_RESULT': str(result), 'CAMPAIGN_PYDEPS': str(PYDEPS),
            'PYTHONPATH': str(ROOT), 'UV_CACHE_DIR': str(ROOT / 'uv-cache'), 'UV_NO_SYNC': '1',
            'WANDB_MODE': 'disabled', 'CUDA_DEVICE_MAX_CONNECTIONS': '1',
-           # Ray workers already run the venv's Python from `ray start`; Ray's `uv run` hook would instead
-           # require the working directory to hold pyproject.toml and ship it to every worker.
+           # Ray workers already use the venv's Python via `ray start`. Ray's `uv run` hook would require
+           # pyproject.toml in the working directory and ship it to every worker.
            'RAY_ENABLE_UV_RUN_RUNTIME_ENV': '0'}
 
     def freeze_packages():
@@ -64,13 +63,13 @@ def main(role):
     ip = s['trainer_ip' if role == 'learner' else 'generation_ip']
     processes = Supervisor(result, prefix=f'{role}-')
     exit_on_signals()
-    # Slurm's GPU plugin also sets the AMD variable; verl workers refuse to start when it is set with CUDA's.
+    # Slurm's GPU plugin also sets the AMD variable, and verl workers refuse to start if both are set.
     os.environ.pop('ROCR_VISIBLE_DEVICES', None)
     ray = ['ray', 'start', f'--node-ip-address={ip}', f'--num-gpus={recipe.GPUS_PER_NODE}',
            f'--num-cpus={recipe.RAY_CPUS_PER_NODE}', '--disable-usage-stats', '--block']
     capture = [sys.executable, '-m', 'shared.capture', role]
-    # Ray workers inherit this from their node. At 32k the trainer can run out of memory from
-    # fragmentation without it, and verl enables it for its vLLM servers anyway.
+    # Ray workers inherit this. Without it the trainer can run out of memory from fragmentation at
+    # 32k, and verl already enables it for its vLLM servers.
     ray_env = {'PYTORCH_CUDA_ALLOC_CONF': 'expandable_segments:True', **CACHE_ENV}
     try:
         processes.launch(capture, 'capture')

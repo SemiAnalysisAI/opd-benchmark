@@ -1,8 +1,8 @@
-"""Equal-domain prompts and batches for Miles, for any `recipe.DOMAINS`.
+"""Domain-balanced prompts and batches for Miles, for any `recipe.DOMAINS`.
 
-BalancedDataSource interleaves the domains of the mixed training file (replacing the pinned
-launcher's puzzle-specific source). BalancedAsyncBuffer assembles equal-domain async batches
-without bypassing the OPD or policy-lag guards.
+BalancedDataSource interleaves the domains of the mixed training file, replacing the pinned
+launcher's puzzle-specific source. BalancedAsyncBuffer gives every async batch an equal share of
+each domain while keeping the OPD and policy-lag checks.
 """
 
 import asyncio
@@ -48,7 +48,7 @@ class BalancedDataSource(RolloutDataSourceWithBuffer):
 
 
 class BalancedAsyncBuffer(DefaultDataBuffer):
-    """Reserve an equal share of the bounded queue for each puzzle domain."""
+    """Bounded queue with an equal share reserved for each domain."""
 
     def __init__(self, input):
         super().__init__(input)
@@ -101,12 +101,13 @@ class BalancedAsyncBuffer(DefaultDataBuffer):
             return
 
         async with self._cond:
-            # A full queue contains both domains, so the consumer can make progress.
+            # A full queue holds every domain, so the consumer can always make progress.
             while len(self._buffer) >= self._capacity:
                 await self._cond.wait()
             positions = [i for i, entry in enumerate(self._buffer) if self._domain(entry) == domain]
             if len(positions) >= self._per_domain_capacity:
-                # Blocking here would stop the serial producer from adding the missing domain.
+                # Evict the oldest entry instead of blocking: the producer is serial, and blocking
+                # would stop it from ever adding the missing domain.
                 evicted = self._buffer.pop(positions[0])
                 self._window[f"{domain}/overflow_groups_evicted"] += 1
                 self._unused_handler_fn(evicted.prompt_group)
