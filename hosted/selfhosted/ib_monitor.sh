@@ -9,7 +9,7 @@ set -u
 node="$(hostname -s 2>/dev/null || hostname)"
 out="$MILES_FABRIC_TELEMETRY_DIR/ib-perfquery/${node}.csv"
 mkdir -p "$(dirname "$out")"
-printf 'collector_time_utc,node,device,port,state,rate,port_xmit_data,port_rcv_data,port_xmit_packets,port_rcv_packets,symbol_error,link_downed,port_rcv_errors,port_xmit_discards\n' > "$out"
+[[ -s $out ]] || printf 'collector_time_utc,node,device,port,state,rate,port_xmit_data,port_rcv_data,port_xmit_packets,port_rcv_packets,symbol_error,link_downed,port_rcv_errors,port_xmit_discards\n' > "$out"  # A restart appends.
 devices=()
 for d in /sys/class/infiniband/*; do
     [[ $(cat "$d/ports/1/link_layer" 2>/dev/null) == InfiniBand ]] && devices+=("$(basename "$d")")
