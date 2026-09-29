@@ -165,7 +165,8 @@ def main():
                      'net': collector.summarize_net(scratch, role_sets)}
 
     nodes = server['nodes']
-    trainer_gpus = GPUS_PER_NODE * len(roles.get('trainer', []))
+    # A colocated server (verl-tinker's hybrid engine) trains and samples on the same 'shared' nodes.
+    trainer_gpus = GPUS_PER_NODE * len(roles.get('trainer', []) + roles.get('shared', []))
     steps = step_records(args.output, workload)
     intervals = [(utc(b['utc']) - utc(a['utc'])).total_seconds() for a, b in zip(steps, steps[1:]) if a.get('utc') and b.get('utc')]
     quality = ({'benchmark': json.loads((args.output/'benchmark.json').read_text())} if (args.output/'benchmark.json').is_file()
@@ -178,7 +179,7 @@ def main():
         'topology': {'nodes': nodes, 'gpus_per_node': GPUS_PER_NODE, 'physical_gpus': GPUS_PER_NODE * len(nodes),
                      'node_roles': roles, 'role_source': role_source,
                      'trainer_gpus': trainer_gpus,
-                     'inference_gpus': GPUS_PER_NODE * len(roles.get('inference', []))},
+                     'inference_gpus': GPUS_PER_NODE * len(roles.get('inference', []) + roles.get('shared', []))},
         'protocol': config, 'steps': steps,
         'step_seconds': ({'median': statistics.median(intervals), 'mean': statistics.mean(intervals),
                           'min': min(intervals), 'max': max(intervals), 'basis': 'steps 2..N completion intervals'}
