@@ -4,9 +4,11 @@
 #   CAMPAIGN=/shared/.../tinker-endpoints sbatch -p PARTITION hosted/selfhosted/skyrl/serve.sbatch
 #
 # Layout: the Megatron LoRA trainer on two nodes (TP4, EP8), four TP4 vLLM engines on the other two, not colocated,
-# so sampling overlaps training. Every adapter (student and teachers) is served by the same engines. The server
-# never expires a session (--session-timeout-sec -1), because SkyRL unloads a stale session's adapter and a teacher
-# must stay servable after its SFT client exits.
+# so sampling overlaps training. Micro-batches are bin-packed up to 32,768 tokens; one sequence per micro-batch made
+# SFT on the short simple_geometry traces 3x slower per token than on caesar_cipher. Every adapter (student and
+# teachers) is served by the same engines. The server never expires a session (--session-timeout-sec -1), because
+# SkyRL unloads a stale session's adapter and a teacher must stay servable after its SFT client exits. The cluster
+# steps (shm cleanup, telemetry, NCCL on InfiniBand, the Ray cluster) are in ../common.sh.
 #
 # Inputs under $CAMPAIGN: images/skyrl-megatron.sqsh, src/skyrl (the SkyRL checkout, with .venv from `uv sync
 # --extra tinker --extra megatron`), hf/ (a Hugging Face cache holding the base model), telemetry-scripts/ (the
@@ -24,44 +26,17 @@ PORT=${PORT:-8000}
 BASE_MODEL=${BASE_MODEL:-Qwen/Qwen3.6-35B-A3B}
 LORA_ALPHA=${LORA_ALPHA:-32}
 SRC=$CAMPAIGN/src/skyrl
-RUN=$CAMPAIGN/skyrl/server-$SLURM_JOB_ID
-mkdir -p "$RUN/logs" "$RUN/lora-sync" "$RUN/checkpoints"
-mapfile -t NODES < <(scontrol show hostnames "$SLURM_JOB_NODELIST")
-HEAD=${NODES[0]}
-HEAD_IP=$(srun --overlap -N1 -w "$HEAD" hostname -I | awk '{print $1}')
-
-export MILES_GPU_TELEMETRY_DIR=$RUN/telemetry/gpu MILES_FABRIC_TELEMETRY_DIR=$RUN/telemetry/fabric
-export MILES_SYSTEM_TELEMETRY_DIR=$RUN/telemetry/system
-srun --overlap -N4 --ntasks-per-node=1 bash "$CAMPAIGN/telemetry-scripts/system_snapshot.sh" before
-srun --overlap -N4 --ntasks-per-node=1 bash "$CAMPAIGN/telemetry-scripts/gpu_monitor.sh" &
-srun --overlap -N4 --ntasks-per-node=1 bash "$CAMPAIGN/telemetry-scripts/fabric_monitor.sh" &
-
-export NVIDIA_VISIBLE_DEVICES=all HF_HOME=$CAMPAIGN/hf HF_HUB_OFFLINE=1
+source "$CAMPAIGN/opd/hosted/selfhosted/common.sh"
+# SkyRL at 7d94ccf crashes serializing a forward_backward metric that is None (importance_ratio:mean with
+# loss_fn=importance_sampling); none-metric.patch skips such a metric and logs its name.
+PATCH=$SELFHOSTED/skyrl/none-metric.patch
+git -C "$SRC" apply --reverse --check "$PATCH" 2>/dev/null || git -C "$SRC" apply "$PATCH"
+selfhosted_setup skyrl "$CAMPAIGN/images/skyrl-megatron.sqsh" skyrl-megatron
+mkdir -p "$RUN/lora-sync" "$RUN/checkpoints"
 export VLLM_USE_FLASHINFER_MOE_FP16=0  # Blackwell: the flashinfer bf16 MoE kernel needs a multiple-of-128 expert size.
 export FLA_TILELANG=0                  # Blackwell: the TileLang GatedDeltaNet backward aborts.
-export VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS=1800 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-export NCCL_DEBUG=INFO NCCL_DEBUG_SUBSYS=INIT,NET NCCL_DEBUG_FILE=$RUN/logs/nccl-%h-%p.out
-CONTAINER=(--container-image="$CAMPAIGN/images/skyrl-megatron.sqsh" --container-name=skyrl-megatron
-           --container-mounts=/shared:/shared --container-writable --export=ALL)
-
-srun --overlap -N1 -w "$HEAD" "${CONTAINER[@]}" bash -c \
-    "$SRC/.venv/bin/ray start --head --node-ip-address=$HEAD_IP --port=6379 --block" > "$RUN/logs/ray-$HEAD.log" 2>&1 &
-sleep 20
-for node in "${NODES[@]:1}"; do
-    srun --overlap -N1 -w "$node" "${CONTAINER[@]}" bash -c \
-        "$SRC/.venv/bin/ray start --address=$HEAD_IP:6379 --node-ip-address=\$(hostname -I | awk '{print \$1}') --block" \
-        > "$RUN/logs/ray-$node.log" 2>&1 &
-done
-# Start serving only once every GPU has joined; a node whose container failed to start would otherwise leave the
-# trainer or engine placement group pending until the first request times out.
-want=$((${#NODES[@]} * 8))
-for _ in $(seq 60); do
-    gpus=$(srun --overlap -N1 -w "$HEAD" "${CONTAINER[@]}" "$SRC/.venv/bin/python" -c \
-        "import ray; ray.init(address='$HEAD_IP:6379', logging_level='ERROR'); print(int(ray.cluster_resources().get('GPU', 0)))" 2>/dev/null | tail -1)
-    [[ $gpus == "$want" ]] && break
-    sleep 10
-done
-[[ $gpus == "$want" ]] || { echo "Ray has ${gpus:-0} of $want GPUs; see $RUN/logs/ray-*.log" >&2; exit 1; }
+export VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS=1800
+selfhosted_ray "$SRC/.venv/bin"
 
 BACKEND_CONFIG=$(cat <<JSON
 {
@@ -81,8 +56,7 @@ BACKEND_CONFIG=$(cat <<JSON
   "trainer.policy.model.lora.lora_sync_path": "$RUN/lora-sync",
   "trainer.policy.model.lora.max_loras": 4,
   "trainer.policy.model.lora.max_cpu_loras": 8,
-  "trainer.micro_forward_batch_size_per_gpu": 1,
-  "trainer.micro_train_batch_size_per_gpu": 1,
+  "trainer.max_tokens_per_microbatch": 32768,
   "trainer.max_prompt_length": 2048,
   "generator.sampling_params.max_generate_length": 30720,
   "generator.eval_sampling_params.max_generate_length": 30720,
@@ -122,4 +96,4 @@ srun --overlap -N1 -w "$HEAD" "${CONTAINER[@]}" bash -c "cd $SRC && export RAY_A
     --backend-config '$BACKEND_CONFIG'" > "$RUN/logs/server.log" 2>&1 &
 SERVER=$!
 wait $SERVER || true
-srun --overlap -N4 --ntasks-per-node=1 bash "$CAMPAIGN/telemetry-scripts/system_snapshot.sh" after
+selfhosted_finish
