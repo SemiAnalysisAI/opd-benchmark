@@ -1,0 +1,22 @@
+diff --git a/skyrl/tinker/proto_serialization.py b/skyrl/tinker/proto_serialization.py
+index 7a85fbf0..9120b5cb 100644
+--- a/skyrl/tinker/proto_serialization.py
++++ b/skyrl/tinker/proto_serialization.py
+@@ -17,6 +17,7 @@ these via server-side client_config flags and fall back to JSON):
+   the same endpoint via the ``forward_only`` flag instead of ``/api/v1/forward``.
+   The parser here is the inverse of the SDK's ``tinker/proto/request_conv.py``.
+ """
++import logging
+ 
+ import base64
+ from collections.abc import Iterable, Sequence
+@@ -190,6 +191,9 @@ def _serialize_forward_backward_output(result_data: dict) -> bytes:
+     proto = pb.ForwardBackwardOutput()
+     proto.loss_fn_output_type = output.loss_fn_output_type
+     for name, value in output.metrics.items():
++        if value is None:  # ClusterMAX patch: a None metric crashed serialization; skip it and name it.
++            logging.getLogger(__name__).warning("forward_backward metric %s is None; not serialized", name)
++            continue
+         proto.metrics[name] = float(value)
+ 
+     if not output.loss_fn_outputs:
