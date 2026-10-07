@@ -69,7 +69,8 @@ MEGATRON_MODEL_DIR = 'Qwen3.6-35B-A3B_torch_dist'
 #           and the student policy on GPUs 2-7, two GPUs per engine.
 #   h100x3  Three 8 x H100 80 GB nodes, Miles only. A 35B teacher does not fit on one 80 GB GPU,
 #           so generation node i serves the teacher for DOMAINS[i] on GPUs 0-1 (TP2) and the policy
-#           on GPUs 2-7. The 12 policy GPUs double b200x2's six. The trainer node keeps Adam on the CPU.
+#           on GPUs 2-7. The 12 policy GPUs double b200x2's six. The trainer node keeps Adam on the CPU
+#           and splits each sequence over two GPUs (context parallelism 2).
 LAYOUTS = ('b200x2', 'h100x3')
 LAYOUT = EXPERIMENT.get('layout', 'b200x2')
 assert LAYOUT in LAYOUTS, LAYOUT
@@ -86,5 +87,8 @@ ROLLOUT_GPUS = len(POLICY_GPUS) * GENERATION_NODES
 POLICY_GPUS_PER_ENGINE = 2
 TRAINER_OPTIMIZER_CPU_OFFLOAD = H100  # Adam states for 35B do not fit next to 32k activations in 80 GB.
 TRAINER_TENSOR_PARALLEL = 2 if H100 else 1  # H100: TP2 with sequence parallelism, experts still EP8.
+# H100: a full 32k-token sequence per GPU ran out of memory in the backward pass once responses grew
+# (run 533, update 15), so two GPUs share each sequence. A micro-batch still holds MAX_TOKENS_PER_GPU tokens.
+TRAINER_CONTEXT_PARALLEL = 2 if H100 else 1
 CPUS_PER_NODE = 128 if H100 else 80
 RAY_CPUS_PER_NODE = 64

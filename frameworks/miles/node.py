@@ -32,7 +32,7 @@ class MilesNode(ContainerNode):
                  '--opd-domain-targets', *(f'{d}={1 / len(r.DOMAINS)}' for d in r.DOMAINS),
                  '--eval-prompt-data', *dev, '--eval-config', self.result / 'eval.json', '--skip-eval-before-train',
                  '--apply-chat-template-kwargs', json.dumps({'enable_thinking': r.ENABLE_THINKING}),
-                 '--sglang-context-length', r.CONTEXT_LENGTH, '--context-parallel-size', '1',
+                 '--sglang-context-length', r.CONTEXT_LENGTH, '--context-parallel-size', r.TRAINER_CONTEXT_PARALLEL,
                  '--log-probs-chunk-size', r.LOG_PROBS_CHUNK_SIZE,
                  # Match the Slime and Prime-RL optimizer (the launcher uses wd 0.1, beta2 0.98).
                  '--weight-decay', '0', '--adam-beta2', '0.999',
@@ -72,7 +72,9 @@ class MilesNode(ContainerNode):
                    '--candidate-top-k', '0', '--loss-mode', 'legacy', '--reward-refresh',
                    '--domain-balance', 'static', '--num-rollout', r.UPDATES, '--rollout-batch-size', r.PROMPTS_PER_UPDATE,
                    '--n-samples-per-prompt', r.SAMPLES_PER_PROMPT, '--global-batch-size', r.PROMPTS_PER_UPDATE,
-                   '--max-response-len', r.MAX_RESPONSE_TOKENS, '--max-tokens-per-gpu', r.MAX_TOKENS_PER_GPU,
+                   '--max-response-len', r.MAX_RESPONSE_TOKENS,
+                   # Miles packs this times the context-parallel size into each micro-batch.
+                   '--max-tokens-per-gpu', r.MAX_TOKENS_PER_GPU // r.TRAINER_CONTEXT_PARALLEL,
                    # A draft </answer> inside the thinking must not end the rollout.
                    '--no-stop-at-answer',
                    # This timeout also bounds policy generations, which take minutes at 30k tokens.

@@ -19,11 +19,11 @@ Replace the documentation-only addresses in `config/site.example.json` with rout
 
 ### H100 layout (`h100x3`, Miles only)
 
-A 35B teacher does not fit on one 80 GB GPU, and Adam states for 35B do not fit next to 32k-token activations. `tools/prepare.py miles --layout h100x3` (or `LAYOUT=h100x3` for `tools/reproduce.sh`) therefore uses three nodes:
+A 35B teacher does not fit on one 80 GB GPU, and Adam states for 35B do not fit next to 32k-token activations. Without context parallelism the trainer ran out of memory in the backward pass of a full-length sequence once responses grew (run 533, update 15). `tools/prepare.py miles --layout h100x3` (or `LAYOUT=h100x3` for `tools/reproduce.sh`) therefore uses three nodes:
 
 | Node | GPUs 0-1 | GPUs 2-7 |
 |---|---|---|
-| Trainer | Megatron TP2 with sequence parallelism, EP8, Adam offloaded to the CPU | (same) |
+| Trainer | Megatron TP2 with sequence parallelism, context parallelism 2, EP8, Adam offloaded to the CPU | (same) |
 | Generation 1 | caesar_cipher teacher (TP2) | Policy, three TP2 engines |
 | Generation 2 | simple_geometry teacher (TP2) | Policy, three TP2 engines |
 

@@ -7,7 +7,7 @@ The current experiment is multi-teacher OPD (MOPD): Qwen3.6-35B-A3B learns from 
 ## Status
 
 - The single-teacher `caesar_cipher` variant (`--domains caesar_cipher`) has run on GPUs in Miles, Prime-RL, Slime and verl. NeMo-RL deadlocked before its first update. See the [benchmark report](docs/CAESAR-OPD-2026-09-27.md).
-- The two-teacher MOPD experiment ran in Miles, Prime-RL and verl on 16 B200 GPUs (benchmarks and telemetry in [`docs/mopd-2026-09-29/data`](docs/mopd-2026-09-29/data)). Miles is now running it on 24 H100 80 GB GPUs with the `h100x3` layout: see the [H100 MOPD report](docs/MOPD-H100-2026-10-07.md), with results in [`docs/mopd-h100-2026-10-07`](docs/mopd-h100-2026-10-07).
+- The two-teacher MOPD experiment ran in Miles, Prime-RL and verl on 16 B200 GPUs (benchmarks and telemetry in [`docs/mopd-2026-09-29/data`](docs/mopd-2026-09-29/data)). Miles also ran it on 24 H100 80 GB GPUs with the `h100x3` layout: after 20 updates the student scores 0.773 avg@8 on caesar_cipher and 0.998 on simple_geometry (teachers 0.703 and 0.996). See the [H100 MOPD report](docs/MOPD-H100-2026-10-07.md); benchmarks and telemetry are in [`docs/mopd-h100-2026-10-07/data`](docs/mopd-h100-2026-10-07/data).
 - A previous experiment (Countdown and Graph Coloring, thinking off) completed in Miles, Prime-RL and Slime on two nodes of eight B200 GPUs. See [provenance](docs/PROVENANCE.md).
 
 Results are single observations and do not rank the frameworks. The implementations differ in objective, scheduling, precision and checkpoint content, and maximum useful GPU utilization was not demonstrated.

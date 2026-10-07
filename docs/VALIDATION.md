@@ -2,7 +2,7 @@
 
 ## What has run on GPUs
 
-On September 27, 2026 the package ran the single-teacher `caesar_cipher` variant in Miles, Prime-RL, Slime and verl on 16 B200 GPUs. Every run completed 20 updates and was benchmarked; see the [report](CAESAR-OPD-2026-09-27.md). NeMo-RL deadlocked before its first update. The two-teacher MOPD recipe has not run.
+On September 27, 2026 the package ran the single-teacher `caesar_cipher` variant in Miles, Prime-RL, Slime and verl on 16 B200 GPUs. Every run completed 20 updates and was benchmarked; see the [report](CAESAR-OPD-2026-09-27.md). NeMo-RL deadlocked before its first update. On October 7, 2026 Miles ran the two-teacher MOPD recipe on 24 H100 80 GB GPUs (`h100x3`) for 20 updates, and its checkpoints were benchmarked; see the [H100 report](MOPD-H100-2026-10-07.md).
 
 ## Package tests
 

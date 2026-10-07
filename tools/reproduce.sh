@@ -145,7 +145,7 @@ runtime() {  # build what the campaign needs before submission (see docs/SETUP.m
   prime-rl|verl)
     local extras=(--all-extras)
     [[ $fw == verl ]] && extras=(--all-packages --extra vllm --extra fsdp)
-    [[ -x $c/source/.venv/bin/python ]] || { say "building the $fw venv"; (cd "$c/source" && "$uv" sync --frozen --python 3.12 "${extras[@]}"); }
+    [[ -x $c/source/.venv/bin/python ]] || { say "building the $fw venv"; (cd "$c/source" && "$uv" sync --frozen --managed-python --python 3.12 "${extras[@]}"); }
     [[ $fw == prime-rl ]] && "$uv" pip install -q --python "$c/source/.venv/bin/python" --no-deps -e "$c/environments/rg_tasks"
     flashinfer "$c/source/.venv/bin/python"
     [[ -d $c/pydeps/reasoning_gym ]] || "$uv" pip install -q --target "$c/pydeps" --python "$c/source/.venv/bin/python" reasoning-gym==0.1.25 ;;

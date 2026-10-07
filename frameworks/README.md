@@ -2,7 +2,7 @@
 
 Each directory runs the experiment defined in `shared/recipe.py` on Slurm: a Qwen3.6-35B-A3B student learns from frozen reasoning_gym GRPO teachers, one for `caesar_cipher` and one for `simple_geometry`. A directory holds only framework-specific code. `upstream/` holds the pinned revision, the patch (if any) and the license.
 
-The single-teacher `caesar_cipher` variant (`--domains caesar_cipher`) has run in Miles, Prime-RL, Slime and verl; NeMo-RL deadlocked before its first update. See the [benchmark report](../docs/CAESAR-OPD-2026-09-27.md). The two-teacher experiment has not been run with this code. See [setup](../docs/SETUP.md) to run it, and [provenance](../docs/PROVENANCE.md) for the previous experiment's results.
+The single-teacher `caesar_cipher` variant (`--domains caesar_cipher`) has run in Miles, Prime-RL, Slime and verl; NeMo-RL deadlocked before its first update. See the [benchmark report](../docs/CAESAR-OPD-2026-09-27.md). The two-teacher experiment ran in Miles, Prime-RL and verl on 16 B200 GPUs, and in Miles on 24 H100 GPUs ([H100 report](../docs/MOPD-H100-2026-10-07.md)). See [setup](../docs/SETUP.md) to run it, and [provenance](../docs/PROVENANCE.md) for the previous experiment's results.
 
 ## Shared recipe (`shared/recipe.py`)
 
