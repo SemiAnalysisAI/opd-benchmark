@@ -40,6 +40,13 @@ The single-teacher `caesar_cipher` variant (`--domains caesar_cipher`) has run i
 
 Miles uses sampled tokens because top-k candidate scoring is quadratic in response length. Its launcher arguments also disable the answer stop, set a 7200 s teacher timeout, match Slime's Adam settings (weight decay 0, beta2 0.999), drop the MTP layers and replace the puzzle-only data source. The learning rate is the pinned launcher's default.
 
+Throughput settings, checked against Miles' fully async examples:
+
+- `domain_balance.py` submits each new prompt from the task with the fewest pending samples, and keeps finished samples past a task's share of the queue in an overflow list. The earlier buffer evicted them after generation and teacher scoring: in the B200 MOPD run the teachers prefilled 47M tokens for about 14M trained.
+- At most 160 samples are in flight (1.25 batches). At policy lag 1 a sample must finish within about two updates, so a deeper pipeline mostly produces stale samples.
+- Greedy dev evaluation pauses generation and training (about 400 s at 30k tokens), so Miles evaluates only after the last update and skips the step-0 evaluation. `tools/benchmark.py` evaluates every saved checkpoint offline. The other frameworks still evaluate every 10 updates.
+- Policy engines use 80% of GPU memory instead of the launcher's 65%, which assumed colocation.
+
 ### Prime-RL
 
 Prime-RL keeps upstream defaults. Only the shared recipe values (including policy lag 1 and weight decay 0), the two-node layout and the teachers are set. The teacher engine takes the two settings from upstream's OPD example (`gpu_memory_utilization` 0.5, eager), and the router takes upstream's arguments.

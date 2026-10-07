@@ -3,7 +3,8 @@
 Evaluation samples are scored by the shared task verifier instead. Training samples also store the
 verifier score in `metadata["raw_reward"]`, so Miles logs it as `rollout/raw_reward` instead of the
 teacher reward's constant 0. The OPD loss ignores it. Each teacher attempt is appended to
-`teacher-latency-<pid>.jsonl`.
+`teacher-latency-<pid>.jsonl`. `log_rollout` appends each training batch's verifier score per task to
+`train-reward.jsonl` and one row per trained sample (task, score, lengths, status) to `train-samples.jsonl`.
 """
 import asyncio
 import json
@@ -63,3 +64,31 @@ async def reward_func(args, sample, **kwargs):
         finally:
             _record_attempt(sample, attempt, started, total_started, success, error)
         await asyncio.sleep(FIRST_RETRY_SECONDS * 2 ** (attempt - 1))
+
+
+def log_rollout(rollout_id, args, samples, rollout_extra_metrics, rollout_time):
+    """Miles' custom rollout log hook: record the training batch's verifier scores and lengths.
+
+    Returns False so Miles still logs its own rollout metrics.
+    """
+    result = Path(os.environ['CAMPAIGN_RESULT'])
+    with (result / 'train-samples.jsonl').open('a') as f:
+        for sample in samples:
+            f.write(json.dumps({'rollout_id': rollout_id, 'index': sample.index, 'domain': sample.metadata.get('domain'),
+                                'teacher': sample.metadata.get('opd_teacher'), 'score': sample.metadata.get('raw_reward'),
+                                'prompt_tokens': len(sample.tokens) - sample.response_length,
+                                'response_tokens': sample.response_length,
+                                'status': getattr(sample.status, 'value', str(sample.status))}) + '\n')
+    by_domain, unscored = {}, 0
+    for sample in samples:
+        value = sample.metadata.get('raw_reward')
+        if value is None:  # logging must never stop training
+            unscored += 1
+            continue
+        by_domain.setdefault(sample.metadata.get('domain'), []).append(value)
+    record = {'rollout_id': rollout_id, 'update': rollout_id + 1, 'unscored': unscored,
+              'domains': {d: {'samples': len(v), 'score': sum(v) / len(v)}
+                          for d, v in sorted(by_domain.items(), key=lambda kv: str(kv[0]))}}
+    with (result / 'train-reward.jsonl').open('a') as f:
+        f.write(json.dumps(record) + '\n')
+    return False

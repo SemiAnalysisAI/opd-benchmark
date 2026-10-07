@@ -63,13 +63,28 @@ TEACHERS = {  # GRPO teachers; the revisions are the tags step-125 and step-50.
 BASE_MODEL_DIR = 'Qwen3.6-35B-A3B'
 MEGATRON_MODEL_DIR = 'Qwen3.6-35B-A3B_torch_dist'
 
-# Hardware: two nodes with eight GPUs each. The trainer node trains on all eight.
-# The generation node serves one frozen teacher per GPU on GPUs 0-1 (GPU 1 is idle
-# in single-teacher runs) and the student policy on GPUs 2-7, two GPUs per engine.
+# Hardware, chosen per campaign with `tools/prepare.py --layout` (default `b200x2`).
+#   b200x2  Two 8 x B200 nodes. The trainer node trains on all eight GPUs. The generation node
+#           serves one frozen teacher per GPU on GPUs 0-1 (GPU 1 is idle in single-teacher runs)
+#           and the student policy on GPUs 2-7, two GPUs per engine.
+#   h100x3  Three 8 x H100 80 GB nodes, Miles only. A 35B teacher does not fit on one 80 GB GPU,
+#           so generation node i serves the teacher for DOMAINS[i] on GPUs 0-1 (TP2) and the policy
+#           on GPUs 2-7. The 12 policy GPUs double b200x2's six. The trainer node keeps Adam on the CPU.
+LAYOUTS = ('b200x2', 'h100x3')
+LAYOUT = EXPERIMENT.get('layout', 'b200x2')
+assert LAYOUT in LAYOUTS, LAYOUT
+H100 = LAYOUT == 'h100x3'
 GPUS_PER_NODE = 8
 TRAINER_GPUS = 8
-TEACHER_GPU = {domain: gpu for gpu, domain in enumerate(DOMAINS)}
-POLICY_GPUS = (2, 3, 4, 5, 6, 7)
+GENERATION_NODES = 2 if H100 else 1
+TEACHER_GPU = {domain: gpu for gpu, domain in enumerate(DOMAINS)}  # b200x2: one GPU per teacher
+# Per domain: (generation node index, GPUs on that node). One engine per teacher.
+TEACHER_PLACEMENT = ({domain: (i, (0, 1)) for i, domain in enumerate(DOMAINS)} if H100 else
+                     {domain: (0, (gpu,)) for domain, gpu in TEACHER_GPU.items()})
+POLICY_GPUS = (2, 3, 4, 5, 6, 7)  # On each generation node.
+ROLLOUT_GPUS = len(POLICY_GPUS) * GENERATION_NODES
 POLICY_GPUS_PER_ENGINE = 2
-CPUS_PER_NODE = 80
+TRAINER_OPTIMIZER_CPU_OFFLOAD = H100  # Adam states for 35B do not fit next to 32k activations in 80 GB.
+TRAINER_TENSOR_PARALLEL = 2 if H100 else 1  # H100: TP2 with sequence parallelism, experts still EP8.
+CPUS_PER_NODE = 128 if H100 else 80
 RAY_CPUS_PER_NODE = 64

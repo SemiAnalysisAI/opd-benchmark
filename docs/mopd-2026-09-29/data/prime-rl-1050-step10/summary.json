@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-runs/prime-rl-mopd/checkpoints/prime-rl-1050/checkpoints/step_10/weights",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 419.5302309989929,
+  "output_tokens_per_second": 43210.92655666933,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.5317460317460317,
+      "pass@8": 0.9444444444444444,
+      "finished_thinking": 0.939484126984127,
+      "truncated": 0.06547619047619048,
+      "response_tokens_mean": 14483.602182539682,
+      "response_tokens_median": 12636.0
+    },
+    "simple_geometry": {
+      "avg@8": 1.0,
+      "pass@8": 1.0,
+      "finished_thinking": 1.0,
+      "truncated": 0.0,
+      "response_tokens_mean": 3446.1123046875,
+      "response_tokens_median": 3023.0
+    }
+  }
+}

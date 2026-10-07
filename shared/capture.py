@@ -1,10 +1,10 @@
 """Sample GPU, host and Prometheus metrics until the campaign stops.
 
-    python -m shared.capture ROLE [HOST:PORT ...] [--engine-log LOG --engine-host HOST]
+    python -m shared.capture ROLE [HOST:PORT ...] [--engine-log LOG --engine-host HOST ...]
 
 Every five seconds, appends one row to `<result>/<ROLE>-capture.jsonl.gz`.
 Host counters cover the whole node. `--engine-log` follows a Miles or Slime
-training log and adds each SGLang policy engine it announces as a target.
+training log and adds each SGLang policy engine it announces on an `--engine-host` as a target.
 """
 import argparse
 import concurrent.futures
@@ -55,7 +55,7 @@ def main():
     parser.add_argument('role', help='names the output file, e.g. learner or generation')
     parser.add_argument('targets', nargs='*', help='HOST:PORT Prometheus endpoints')
     parser.add_argument('--engine-log', type=Path, help='training log to scan for policy-engine ports')
-    parser.add_argument('--engine-host', help='host whose engines to scrape from --engine-log')
+    parser.add_argument('--engine-host', nargs='+', default=[], help='hosts whose engines to scrape from --engine-log')
     args = parser.parse_args()
     result = result_dir()
     targets, offset = set(args.targets), 0
@@ -70,7 +70,7 @@ def main():
                 with args.engine_log.open() as log:
                     log.seek(offset)
                     for line in log:
-                        targets |= {f'{args.engine_host}:{p}' for p in engine_ports(line, args.engine_host)}
+                        targets |= {f'{host}:{p}' for host in args.engine_host for p in engine_ports(line, host)}
                     offset = log.tell()
             ordered = sorted(targets)
             row = {'time_unix': time.time(), 'role': args.role, 'host_scope': 'whole node',

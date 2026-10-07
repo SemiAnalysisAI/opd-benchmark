@@ -10,7 +10,8 @@ last complete row.
 
 Per-update metrics come from each framework's own output (the Miles, Slime and verl
 training logs, Prime-RL's `monitors/file/metrics.jsonl`) and are mapped onto the common
-fields in `UPDATE_FIELDS`. NeMo-RL runs get telemetry only. Standard library only.
+fields in `UPDATE_FIELDS`. `train_score_by_domain` is the trained batch's verifier score per task: Prime-RL's
+per-task metrics, Miles' `train-reward.jsonl`, Slime's `train-samples.jsonl` and verl's `rollouts/`. NeMo-RL runs get telemetry only. Standard library only.
 """
 import argparse
 import ast
@@ -50,6 +51,7 @@ UPDATE_FIELDS = {
 MILES_METRICS = re.compile(r'rank0\] \S+ - (?:perf|rollout|step) (\d+): (\{.*\})\s*$')
 SLIME_METRICS = re.compile(r'\] \S+\.py:\d+ - (?:perf|rollout|step) (\d+): (\{.*\})\s*$')
 TENSOR = re.compile(r"tensor\(\[?([-+\d.eE]+)\]?(?:, device='[^']*')?\)")
+DATA = Path(__file__).resolve().parent.parent / 'data'
 B200_PEAK_TFLOPS = 2250  # Dense bf16 peak Miles records as perf/mfu_peak_tflops; Slime logs TFLOPS only.
 
 
@@ -69,7 +71,11 @@ def framework_updates(result, framework):
                 if 'perf/actor_train_tflops' in values:
                     values['perf/actor_train_mfu'] = values['perf/actor_train_tflops'] / B200_PEAK_TFLOPS
     elif framework == 'verl':
-        for line in (result / 'learner-train.out').read_text(errors='replace').splitlines():
+        # The trainer actor's console metrics can stay in its Ray worker log on the trainer node;
+        # frameworks/verl/node.py copies that log to `<role>-trainer-worker.out`.
+        logs = [result / 'learner-train.out', *sorted(result.glob('*trainer-worker.out'))]
+        lines = [line for log in logs if log.exists() for line in log.read_text(errors='replace').splitlines()]
+        for line in lines:
             if 'timing_s/step:' in line:
                 fields = dict(f.strip().rsplit(':', 1) for f in line.split('step:', 1)[1].split(' - ')[1:] if ':' in f)
                 step = int(line.split('step:', 1)[1].split(' ', 1)[0])
@@ -83,10 +89,56 @@ def framework_updates(result, framework):
     return updates
 
 
+def domain_of_prompt():
+    """{user prompt: task} from the packaged training data; each prompt belongs to one task."""
+    prompts = {}
+    for path in sorted(DATA.glob('*-train.jsonl.gz')):
+        if path.name.startswith(('mixed-', '.')):
+            continue
+        domain = path.name.removesuffix('-train.jsonl.gz')
+        with gzip.open(path, 'rt') as stream:
+            prompts.update((json.loads(line)['prompt'][-1]['content'].strip(), domain) for line in stream)
+    return prompts
+
+
+def train_scores_by_domain(result, framework, updates):
+    """{update: {task: mean verifier score of the trained batch}}, keyed like framework_updates."""
+    scores = {}  # update -> task -> [score, ...]
+    if framework == 'prime-rl':
+        for step, values in updates.items():
+            for key, value in values.items():
+                match = re.fullmatch(r'train/(\w+)/effective/agent/reward/mean', key)
+                if match and match[1] != 'agg':  # train/agg/... aggregates the tasks
+                    scores.setdefault(step, {})[match[1]] = [value]
+    elif framework == 'miles' and (path := result / 'train-reward.jsonl').exists():
+        for line in path.read_text().splitlines():  # written by frameworks/miles/opd_reward.log_rollout
+            row = json.loads(line)
+            scores[row['rollout_id']] = {d: [v['score']] for d, v in row['domains'].items()}
+    elif framework == 'slime' and (path := result / 'train-samples.jsonl').exists():
+        with path.open() as stream:
+            for line in stream:
+                row = json.loads(line)
+                scores.setdefault(row['rollout_id'], {}).setdefault(row['domain'], []).append(row['task_score'])
+    elif framework == 'verl' and (directory := result / 'rollouts').is_dir():
+        # verl's dump (trainer.rollout_data_dir) has the decoded chat prompt, not the task:
+        # "system\n...\nuser\n<prompt>\nassistant\n<think>\n".
+        prompts = domain_of_prompt()
+        for path in directory.glob('*.jsonl'):
+            for line in path.read_text().splitlines():
+                row = json.loads(line)
+                user = row['input'].rsplit('\nuser\n', 1)[-1].rsplit('\nassistant\n', 1)[0].strip()
+                # verl names the dump after global_steps N and logs that update's metrics at step N + 1
+                # (the scores and lengths match one step apart).
+                scores.setdefault(row['step'] + 1, {}).setdefault(prompts.get(user), []).append(row['score'])
+    return {u: {d: statistics.fmean(v) for d, v in by.items()} for u, by in scores.items()}
+
+
 def update_summary(result, framework):
     updates = framework_updates(result, framework)
-    rows = [{field: values.get(names.get(framework)) for field, names in UPDATE_FIELDS.items()}
-            for _, values in sorted(updates.items())]
+    by_domain = train_scores_by_domain(result, framework, updates)
+    rows = [{**{field: values.get(names.get(framework)) for field, names in UPDATE_FIELDS.items()},
+             'train_score_by_domain': by_domain.get(update)}
+            for update, values in sorted(updates.items())]
     if framework == 'prime-rl':  # Prime-RL reports MFU in percent; the others as a fraction.
         for row in rows:
             row['mfu'] = row['mfu'] / 100 if isinstance(row['mfu'], (int, float)) else row['mfu']

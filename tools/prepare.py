@@ -26,12 +26,15 @@ HOST_FIELDS = ('generation_node', 'trainer_node', 'generation_ip', 'trainer_ip')
 REQUIRED = PATH_FIELDS + HOST_FIELDS
 # NeMo-RL's MOPD reserves a whole node for the teacher and runs in its own NGC container.
 NEMO_RL_FIELDS = ('teacher_node', 'teacher_ip', 'nemo_rl_container')
+# The h100x3 layout's second generation node.
+H100X3_FIELDS = ('generation_node_2', 'generation_ip_2')
+LAYOUT_FRAMEWORKS = {'b200x2': FRAMEWORKS, 'h100x3': ('miles',)}
 SAFE_VALUE = r'[A-Za-z0-9_./:+-]+'
 
 
-def load_site(path, framework='miles'):
+def load_site(path, framework='miles', layout='b200x2'):
     site = json.loads(Path(path).read_text())
-    required = REQUIRED + (NEMO_RL_FIELDS if framework == 'nemo-rl' else ())
+    required = REQUIRED + (NEMO_RL_FIELDS if framework == 'nemo-rl' else ()) + (H100X3_FIELDS if layout == 'h100x3' else ())
     missing = set(required) - set(site)
     if missing:
         raise ValueError(f'Missing site fields: {sorted(missing)}')
@@ -42,13 +45,15 @@ def load_site(path, framework='miles'):
     for key in PATH_FIELDS + (('nemo_rl_container',) if framework == 'nemo-rl' else ()):
         if not Path(site[key]).is_absolute():
             raise ValueError(f'{key} must be an absolute path')
-    nodes = [site['generation_node'], site['trainer_node'], *([site['teacher_node']] if framework == 'nemo-rl' else [])]
+    nodes = [site['generation_node'], site['trainer_node'], *([site['teacher_node']] if framework == 'nemo-rl' else []),
+             *([site['generation_node_2']] if layout == 'h100x3' else [])]
     if len(set(nodes)) != len(nodes):
         raise ValueError('Every role needs its own node')
-    generation, trainer = (ipaddress.IPv4Address(site[k]) for k in ('generation_ip', 'trainer_ip'))
+    trainer = ipaddress.IPv4Address(site['trainer_ip'])
+    generation = [ipaddress.IPv4Address(site[k]) for k in ('generation_ip', 'generation_ip_2')[:2 if layout == 'h100x3' else 1]]
     # Miles and Slime sort Ray bundles by node IP; Prime-RL uses explicit addresses and verl places its own pools.
-    if framework in ('miles', 'slime') and trainer >= generation:
-        raise ValueError('The recorded Ray placement requires trainer IP < generation IP')
+    if framework in ('miles', 'slime') and any(trainer >= ip for ip in generation):
+        raise ValueError('The recorded Ray placement requires the trainer IP below every generation IP')
     for key in ('base_model', 'megatron_model', 'teachers'):
         if not Path(site[key]).is_relative_to(Path(site['assets'])):
             raise ValueError(f'{key} must be within assets so the container can access it')
@@ -69,8 +74,10 @@ def campaign_files(framework):
                     if p.is_file() and not {'upstream', '__pycache__'} & set(p.relative_to(framework_dir).parts)]
 
 
-def prepare(framework, site, output, source_cache=None, domains=None):
+def prepare(framework, site, output, source_cache=None, domains=None, layout='b200x2'):
     output = output.resolve()
+    if framework not in LAYOUT_FRAMEWORKS[layout]:
+        raise ValueError(f'The {layout} layout supports only {LAYOUT_FRAMEWORKS[layout]}')
     if not re.fullmatch(SAFE_VALUE, str(output)):
         raise ValueError('The campaign path cannot contain whitespace or shell metacharacters')
     if output.exists():
@@ -103,8 +110,9 @@ def prepare(framework, site, output, source_cache=None, domains=None):
     (output / 'models' / recipe.MEGATRON_MODEL_DIR).symlink_to(site['megatron_model'])
     (output / 'teachers').symlink_to(site['teachers'])
     (output / 'site.json').write_text(json.dumps(site, indent=2) + '\n')
-    if domains:  # Read by the campaign's `shared/recipe.py`.
-        (output / 'experiment.json').write_text(json.dumps({'domains': list(domains)}, indent=2) + '\n')
+    experiment = {**({'domains': list(domains)} if domains else {}), **({'layout': layout} if layout != 'b200x2' else {})}
+    if experiment:  # Read by the campaign's `shared/recipe.py`.
+        (output / 'experiment.json').write_text(json.dumps(experiment, indent=2) + '\n')
     (output / 'package-provenance.json').write_text(json.dumps({'framework': framework, **manifest}, indent=2) + '\n')
     print(f'Prepared {output}. No GPU job was submitted. Complete docs/SETUP.md before submission.')
 
@@ -118,10 +126,13 @@ def main():
     parser.add_argument('--source-cache', type=Path, help='local Git clone to clone from; the pinned revision still applies')
     parser.add_argument('--domains', nargs='+', choices=recipe.ALL_DOMAINS,
                         help='one task for single-teacher OPD, e.g. caesar_cipher (default: all)')
+    parser.add_argument('--layout', choices=recipe.LAYOUTS, default='b200x2',
+                        help='hardware layout (default: b200x2); see shared/recipe.py')
     args = parser.parse_args()
     if args.domains and len(args.domains) != 1 and tuple(args.domains) != recipe.ALL_DOMAINS:
         parser.error(f'--domains takes one task or all of {recipe.ALL_DOMAINS} in order')
-    prepare(args.framework, load_site(args.site, args.framework), args.output, args.source_cache, args.domains)
+    prepare(args.framework, load_site(args.site, args.framework, args.layout), args.output, args.source_cache,
+            args.domains, args.layout)
 
 
 if __name__ == '__main__':

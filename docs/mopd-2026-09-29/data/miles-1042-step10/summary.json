@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-runs/miles-mopd/checkpoints/miles-1042/hf/iter_9",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 383.29514169692993,
+  "output_tokens_per_second": 44599.05733299547,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7083333333333334,
+      "pass@8": 0.9841269841269841,
+      "finished_thinking": 0.9464285714285714,
+      "truncated": 0.05853174603174603,
+      "response_tokens_mean": 13718.450396825398,
+      "response_tokens_median": 12269.0
+    },
+    "simple_geometry": {
+      "avg@8": 0.9970703125,
+      "pass@8": 1.0,
+      "finished_thinking": 1.0,
+      "truncated": 0.0,
+      "response_tokens_mean": 3189.84765625,
+      "response_tokens_median": 2735.5
+    }
+  }
+}

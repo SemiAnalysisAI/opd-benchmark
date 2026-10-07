@@ -23,9 +23,11 @@ def main():
     site = json.loads((root/'site.json').read_text())
     manifest = json.loads((root/'package-provenance.json').read_text())
     name = 'opd-' + manifest['framework'] + '-' + hashlib.sha256(str(root).encode()).hexdigest()[:8]
-    nodes = [site['generation_node'], site['trainer_node'], *([site['teacher_node']] if 'teacher_node' in site else [])]
+    layout = json.loads((root/'experiment.json').read_text()).get('layout') if (root/'experiment.json').exists() else None
+    nodes = [site['generation_node'], site['trainer_node'], *([site['teacher_node']] if 'teacher_node' in site else []),
+             *([site['generation_node_2']] if layout == 'h100x3' else [])]
     command = ['salloc', f'--job-name={name}', f'--partition={args.partition}', f'--nodes={len(nodes)}',
-               f'--nodelist={",".join(nodes)}', '--exclusive',
+               f'--nodelist={",".join(nodes)}', '--exclusive', '--mem=0',
                '--gres=gpu:8', f'--time={args.time}', 'python3', str(root/'node.py')]
     print(shlex.join(command), flush=True)
     if not args.submit:

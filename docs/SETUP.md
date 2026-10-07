@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Linux x86_64, Python 3.12, Slurm and a shared writable filesystem.
-- Two exclusive eight-GPU B200 nodes. NeMo-RL needs a third, because its teacher reserves a whole node.
+- Two exclusive eight-GPU B200 nodes. NeMo-RL needs a third, because its teacher reserves a whole node. Miles also runs on three eight-GPU H100 80 GB nodes (the `h100x3` layout, below).
 - For Miles, Slime and NeMo-RL: Pyxis/Enroot with `--container-image`, root remapping and writable containers. Prime-RL and verl run from virtual environments on the hosts.
 - Each node requests 80 CPU cores and exposes 64 to Ray.
 
@@ -16,6 +16,18 @@ Site file rules, enforced by `tools/prepare.py`:
 - Paths must be absolute and contain no spaces or shell metacharacters. The campaign and asset paths must be the same on every node.
 
 Replace the documentation-only addresses in `config/site.example.json` with routable ones. Do not expose Ray or model endpoints publicly.
+
+### H100 layout (`h100x3`, Miles only)
+
+A 35B teacher does not fit on one 80 GB GPU, and Adam states for 35B do not fit next to 32k-token activations. `tools/prepare.py miles --layout h100x3` (or `LAYOUT=h100x3` for `tools/reproduce.sh`) therefore uses three nodes:
+
+| Node | GPUs 0-1 | GPUs 2-7 |
+|---|---|---|
+| Trainer | Megatron TP2 with sequence parallelism, EP8, Adam offloaded to the CPU | (same) |
+| Generation 1 | caesar_cipher teacher (TP2) | Policy, three TP2 engines |
+| Generation 2 | simple_geometry teacher (TP2) | Policy, three TP2 engines |
+
+The policy gets 12 GPUs, twice the six of `b200x2`. The site file adds `generation_node_2` and `generation_ip_2`; the trainer IP must sort below both generation IPs. Each node requests all 128 CPU cores and its whole memory (`--mem=0`), and each trainer rank gets 16 OpenMP threads for the CPU Adam step. For the benchmarks set `BENCH_TP=2`, since one model and its 32k cache do not fit on one GPU. If the shared filesystem is not `/shared`, set `SHARED` to its mount point.
 
 ## One command: `tools/reproduce.sh`
 
@@ -198,4 +210,4 @@ Results can contain full prompts and responses; review them before sharing. Canc
 
 ## Known limits
 
-Only 16 B200 GPUs (24 for NeMo-RL) have been tested; no other GPU type or node count is supported. `tools/reproduce.sh` has not yet run on a fresh machine. Validate on GPUs before treating a new image or hardware configuration as equivalent.
+Only 16 B200 GPUs (24 for NeMo-RL) and, for Miles, 24 H100 80 GB GPUs (`h100x3`) have been tested; no other GPU type or node count is supported. `tools/reproduce.sh` has not yet run on a fresh machine. Validate on GPUs before treating a new image or hardware configuration as equivalent.

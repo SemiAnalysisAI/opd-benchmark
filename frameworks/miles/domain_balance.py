@@ -3,10 +3,16 @@
 BalancedDataSource interleaves the domains of the mixed training file, replacing the pinned
 launcher's puzzle-specific source. BalancedAsyncBuffer gives every async batch an equal share of
 each domain while keeping the OPD and policy-lag checks.
+
+Both run in the rollout process and share `PENDING`: per domain, the prompts submitted but not yet
+trained on or dropped. The source submits the domain with the fewest pending, so a fast domain
+(simple_geometry) cannot fill the engines while the slow one (caesar_cipher) holds the batch. The
+buffer keeps every finished sample: past a domain's share of the queue it waits in an overflow list
+instead of being evicted, since by then its generation and teacher scoring are already paid for.
 """
 
 import asyncio
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 import time
 
 from miles.rollout.data_source import RolloutDataSourceWithBuffer
@@ -16,6 +22,7 @@ from miles.utils.types import Sample
 from shared import recipe
 
 DOMAIN_WAIT_SECONDS = 3600.0  # A 30k-token thinking rollout can take many minutes.
+PENDING = Counter()  # domain -> submitted prompts not yet trained on or dropped
 
 
 class _InterleavedDataset:
@@ -45,6 +52,23 @@ class BalancedDataSource(RolloutDataSourceWithBuffer):
         if self.dataset is None or args.n_samples_per_prompt != 1:
             raise ValueError('Balanced OPD requires a global dataset and one response per prompt')
         self.dataset = _InterleavedDataset(self.dataset)
+        self._deferred = defaultdict(deque)  # Prompts drawn while looking for another domain, in order.
+        self._turn = 0
+
+    def get_samples(self, num_samples):
+        """Each prompt from the domain with the fewest pending (ties rotate), in dataset order per domain."""
+        groups = []
+        for _ in range(num_samples):
+            fewest = min(PENDING[d] for d in recipe.DOMAINS)
+            ties = [d for d in recipe.DOMAINS if PENDING[d] == fewest]
+            domain = ties[self._turn % len(ties)]
+            self._turn += 1
+            while not self._deferred[domain]:
+                [group] = super().get_samples(1)
+                self._deferred[group[0].metadata['domain']].append(group)
+            groups.append(self._deferred[domain].popleft())
+            PENDING[domain] += 1
+        return groups
 
 
 class BalancedAsyncBuffer(DefaultDataBuffer):
@@ -62,6 +86,7 @@ class BalancedAsyncBuffer(DefaultDataBuffer):
         if self._capacity < count or self._capacity % count:
             raise ValueError("Balanced async MOPD requires a buffer capacity divisible by the domains")
         self._per_domain_capacity = self._capacity // count
+        self._overflow = defaultdict(deque)  # Finished samples past a domain's share of the queue.
         self._next_domain_index = 0
         self._window = Counter()
         self._wait_timeout = DOMAIN_WAIT_SECONDS
@@ -85,33 +110,37 @@ class BalancedAsyncBuffer(DefaultDataBuffer):
             raise ValueError("The response and loss mask lengths differ")
         return sum(sample.loss_mask)
 
+    def _drop(self, domain, entry):
+        PENDING[domain] -= 1
+        self._unused_handler_fn(entry.prompt_group)
+
     async def put(self, input):
         domain = self._domain(input)
         if any(s.status == Sample.Status.ABORTED for s in iter_samples(input.group)):
             self._metric_aborted_groups += 1
-            self._unused_handler_fn(input.prompt_group)
+            self._drop(domain, input)
             return
         if self._active_tokens(input) <= 0:
             self._window[f"{domain}/inactive_groups_filtered"] += 1
-            self._unused_handler_fn(input.prompt_group)
+            self._drop(domain, input)
             return
         verdict = call_dynamic_filter(self._dynamic_filter, self._args, input.group)
         if not verdict.keep:
             self._metric_gatherer.on_dynamic_filter_drop(reason=verdict.reason)
+            PENDING[domain] -= 1
             return
 
         async with self._cond:
             # A full queue holds every domain, so the consumer can always make progress.
             while len(self._buffer) >= self._capacity:
                 await self._cond.wait()
-            positions = [i for i, entry in enumerate(self._buffer) if self._domain(entry) == domain]
-            if len(positions) >= self._per_domain_capacity:
-                # Evict the oldest entry instead of blocking: the producer is serial, and blocking
-                # would stop it from ever adding the missing domain.
-                evicted = self._buffer.pop(positions[0])
-                self._window[f"{domain}/overflow_groups_evicted"] += 1
-                self._unused_handler_fn(evicted.prompt_group)
-            self._buffer.append(input)
+            if sum(self._domain(e) == domain for e in self._buffer) >= self._per_domain_capacity:
+                # Not blocking: the producer is serial, and blocking would stop it from ever adding
+                # the missing domain. The sample joins the queue when its domain's share frees up.
+                self._overflow[domain].append(input)
+                self._window[f"{domain}/overflow_groups"] += 1
+            else:
+                self._buffer.append(input)
             self._cond.notify_all()
 
     async def get(self, current_version=None, **_):
@@ -133,6 +162,8 @@ class BalancedAsyncBuffer(DefaultDataBuffer):
                         raise TimeoutError(f"No eligible {domain} sample arrived within {self._wait_timeout}s") from exc
                     continue
                 entry = self._buffer.pop(position)
+                if self._overflow[domain]:
+                    self._buffer.append(self._overflow[domain].popleft())
                 self._cond.notify_all()
                 lag = self._staleness(entry.group, current_version)
                 if lag is None or lag < 0:
@@ -140,13 +171,14 @@ class BalancedAsyncBuffer(DefaultDataBuffer):
                 if self._args.max_weight_staleness is not None and lag > self._args.max_weight_staleness:
                     self._metric_stale_groups += 1
                     self._window[f"{domain}/stale_groups_filtered"] += 1
-                    self._unused_handler_fn(entry.prompt_group)
+                    self._drop(domain, entry)
                     continue
                 active = self._active_tokens(entry)
                 if active <= 0:
                     self._window[f"{domain}/inactive_groups_filtered"] += 1
-                    self._unused_handler_fn(entry.prompt_group)
+                    self._drop(domain, entry)
                     continue
+                PENDING[domain] -= 1
                 self._metric_consumed_staleness.append(lag)
                 self._window[f"{domain}/accepted_groups"] += 1
                 self._window[f"{domain}/accepted_active_tokens"] += active
@@ -159,8 +191,10 @@ class BalancedAsyncBuffer(DefaultDataBuffer):
         prefix = "rollout/fully_async/domain_balance/"
         for domain in self._domains:
             metrics[f"{prefix}{domain}/queued_groups"] = sum(self._domain(e) == domain for e in self._buffer)
+            metrics[f"{prefix}{domain}/overflow_queued_groups"] = len(self._overflow[domain])
+            metrics[f"{prefix}{domain}/pending_groups"] = PENDING[domain]
             for key in ("accepted_groups", "accepted_active_tokens", "wait_seconds", "inactive_groups_filtered",
-                        "stale_groups_filtered", "overflow_groups_evicted"):
+                        "stale_groups_filtered", "overflow_groups"):
                 metrics[f"{prefix}{domain}/{key}"] = self._window[f"{domain}/{key}"]
         self._window.clear()
         return metrics

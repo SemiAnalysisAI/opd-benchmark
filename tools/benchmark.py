@@ -1,10 +1,10 @@
 """Benchmark one Hugging Face checkpoint on the packaged dev sets with vLLM, thinking on.
 
-    python tools/benchmark.py MODEL OUTPUT_DIR [--domains ...] [--samples 8] [--seed 0] [--gpus 8]
+    python tools/benchmark.py MODEL OUTPUT_DIR [--domains ...] [--samples 8] [--seed 0] [--gpus 8] [--tp 1]
 
 Each dev prompt gets `--samples` responses at the training sampling settings:
 temperature 1, top-p 1, up to `recipe.MAX_RESPONSE_TOKENS` tokens. Prompts are split
-across `--gpus` single-GPU vLLM engines. The answer is read after the last `</think>`,
+across `--gpus / --tp` vLLM engines of `--tp` GPUs each (`--tp 2` on 80 GB GPUs). The answer is read after the last `</think>`,
 so a response cut off mid-thought scores 0.
 
 Writes `responses.jsonl.gz` and `summary.json` (avg@k, pass@k, finished-thinking and
@@ -33,9 +33,9 @@ def prompts(domains):
 def worker(args):
     from vllm import LLM, SamplingParams
 
-    mine = prompts(args.domains)[args.worker::args.gpus]
+    mine = prompts(args.domains)[args.worker::args.gpus // args.tp]
     # Text only: some trainers export the language model without the unused vision tower.
-    llm = LLM(model=str(args.model), tensor_parallel_size=1, max_model_len=recipe.CONTEXT_LENGTH, seed=args.seed,
+    llm = LLM(model=str(args.model), tensor_parallel_size=args.tp, max_model_len=recipe.CONTEXT_LENGTH, seed=args.seed,
               language_model_only=True)
     params = SamplingParams(n=args.samples, temperature=1.0, top_p=1.0, max_tokens=recipe.MAX_RESPONSE_TOKENS,
                             seed=args.seed)
@@ -62,7 +62,7 @@ def summarize(args):
     for response in responses:
         response['score'] = score(response['text'], response.pop('label'))
     seconds = max(r['worker_seconds'] for r in responses)
-    summary = {'model': str(args.model), 'samples': args.samples, 'seed': args.seed, 'gpus': args.gpus,
+    summary = {'model': str(args.model), 'samples': args.samples, 'seed': args.seed, 'gpus': args.gpus, 'tp': args.tp,
                'generation_seconds': seconds,
                'output_tokens_per_second': sum(r['response_tokens'] for r in responses) / seconds, 'domains': {}}
     for domain in args.domains:
@@ -94,16 +94,20 @@ def main():
     parser.add_argument('--domains', nargs='+', default=list(recipe.ALL_DOMAINS), choices=recipe.ALL_DOMAINS)
     parser.add_argument('--samples', type=int, default=8, help='responses per prompt (default: 8)')
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--gpus', type=int, default=8, help='one vLLM engine per GPU (default: 8)')
+    parser.add_argument('--gpus', type=int, default=8, help='GPUs to use (default: 8)')
+    parser.add_argument('--tp', type=int, default=1, help='GPUs per vLLM engine (default: 1)')
     parser.add_argument('--worker', type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.worker is not None:
         return worker(args)
+    if args.gpus % args.tp:
+        parser.error('--gpus must be a multiple of --tp')
     args.output.mkdir(parents=True)
     workers = [subprocess.Popen([sys.executable, __file__, *sys.argv[1:], '--worker', str(i)],
-                                env={**os.environ, 'CUDA_VISIBLE_DEVICES': str(i)},
+                                env={**os.environ, 'CUDA_VISIBLE_DEVICES': ','.join(
+                                    str(gpu) for gpu in range(i * args.tp, (i + 1) * args.tp))},
                                 stdout=(args.output / f'worker-{i}.log').open('wb'), stderr=subprocess.STDOUT)
-               for i in range(args.gpus)]
+               for i in range(args.gpus // args.tp)]
     codes = [w.wait() for w in workers]
     if any(codes):
         raise SystemExit(f'Workers exited with {codes}; see {args.output}/worker-*.log')

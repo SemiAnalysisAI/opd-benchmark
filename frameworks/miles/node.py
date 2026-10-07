@@ -26,9 +26,11 @@ class MilesNode(ContainerNode):
         dev = [x for d in r.DOMAINS for x in (d, DATA / r.data_file(d, 'dev'))]
         # Appended after the launcher's own arguments, so these win. The first lines replace the
         # launcher's puzzle-specific tasks, thinking setting and 2k context.
+        tp = ['--tensor-model-parallel-size', r.TRAINER_TENSOR_PARALLEL, '--sequence-parallel'] \
+            if r.TRAINER_TENSOR_PARALLEL > 1 else []
         extra = ['--prompt-data', DATA / r.TRAIN_FILE, '--data-source-path', 'domain_balance.BalancedDataSource',
                  '--opd-domain-targets', *(f'{d}={1 / len(r.DOMAINS)}' for d in r.DOMAINS),
-                 '--eval-prompt-data', *dev, '--eval-config', self.result / 'eval.json',
+                 '--eval-prompt-data', *dev, '--eval-config', self.result / 'eval.json', '--skip-eval-before-train',
                  '--apply-chat-template-kwargs', json.dumps({'enable_thinking': r.ENABLE_THINKING}),
                  '--sglang-context-length', r.CONTEXT_LENGTH, '--context-parallel-size', '1',
                  '--log-probs-chunk-size', r.LOG_PROBS_CHUNK_SIZE,
@@ -36,10 +38,15 @@ class MilesNode(ContainerNode):
                  '--weight-decay', '0', '--adam-beta2', '0.999',
                  # The MTP head is not trained (loss scale 0); dropping it frees memory at 32k.
                  '--mtp-num-layers', '0',
-                 '--sglang-moe-runner-backend', 'triton', '--sglang-enable-metrics',
+                 *tp, '--sglang-moe-runner-backend', 'triton', '--sglang-enable-metrics',
+                 # The engines are dedicated (not colocated), so they can take more memory for the KV cache
+                 # than the launcher's 0.65.
+                 '--sglang-mem-fraction-static', '0.8',
                  '--custom-async-data-buffer-path', 'domain_balance.BalancedAsyncBuffer',
-                 '--custom-rm-path', 'opd_reward.reward_func',
-                 '--async-max-concurrent-samples', '256', '--async-data-buffer-capacity-factor', '1',
+                 '--custom-rm-path', 'opd_reward.reward_func', '--custom-rollout-log-function-path', 'opd_reward.log_rollout',
+                 # In flight: 1.25 batches. At policy lag 1 a sample must finish within about two updates of
+                 # its start, so a deeper pipeline mostly generates samples that are dropped as stale.
+                 '--async-max-concurrent-samples', '160', '--async-data-buffer-capacity-factor', '1',
                  '--max-weight-staleness', r.MAX_POLICY_LAG, '--update-weights-interval', '1',
                  '--save-debug-event-data', self.result / 'events',
                  # Save each checkpoint in HF format too, so it can be benchmarked without conversion.
@@ -50,10 +57,14 @@ class MilesNode(ContainerNode):
                       'CAMPAIGN_PYDEPS': os.environ['CAMPAIGN_PYDEPS'],
                       'TENSORBOARD_DIR': str(self.result / 'tensorboard'),
                       'PYTHONPATH': os.environ['PYTHONPATH'], 'NCCL_DEBUG': 'WARN'}
+        if r.TRAINER_OPTIMIZER_CPU_OFFLOAD:
+            # Ray gives each actor OMP_NUM_THREADS=1, which runs the CPU Adam step on one core per rank
+            # (about 60 s per update on H100, GPUs idle). Give every trainer rank its share of the node.
+            worker_env['OMP_NUM_THREADS'] = str(r.CPUS_PER_NODE // r.TRAINER_GPUS)
         # No --lr: the launcher's default already equals the recipe's learning rate.
-        command = ['scripts/run_mopd_puzzles.py', '--mode', 'student', '--num-nodes', '2',
+        command = ['scripts/run_mopd_puzzles.py', '--mode', 'student', '--num-nodes', 1 + r.GENERATION_NODES,
                    '--fully-async', '--no-colocate', '--use-rollout-logprobs', '--actor-gpus', r.TRAINER_GPUS,
-                   '--megatron-path', self.site['megatron_source'], '--rollout-gpus', len(r.POLICY_GPUS),
+                   '--megatron-path', self.site['megatron_source'], '--rollout-gpus', r.ROLLOUT_GPUS,
                    '--rollout-gpus-per-engine', r.POLICY_GPUS_PER_ENGINE, '--model-dir', ROOT / 'models',
                    '--data-dir', DATA, '--checkpoint-dir', ROOT / 'checkpoints' / self.result.name,
                    '--teacher-urls', ' '.join(f'{domain}={url}' for domain, url in teacher_urls.items()),
@@ -66,8 +77,11 @@ class MilesNode(ContainerNode):
                    '--no-stop-at-answer',
                    # This timeout also bounds policy generations, which take minutes at 30k tokens.
                    '--teacher-timeout-seconds', '7200',
-                   '--eval-interval', r.EVAL_INTERVAL, '--save-interval', r.SAVE_INTERVAL,
+                   # Greedy dev evaluation pauses generation and training, about 400 s each at 30k tokens, so it
+                   # runs only after the last update; tools/benchmark.py evaluates every saved checkpoint offline.
+                   '--eval-interval', r.UPDATES, '--save-interval', r.SAVE_INTERVAL,
                    '--no-cleanup-processes', '--no-sparse-scoring', '--extra-env-vars', json.dumps(worker_env),
+                   *(['--optimizer-cpu-offload'] if r.TRAINER_OPTIMIZER_CPU_OFFLOAD else []),
                    '--extra-args', shlex.join(map(str, extra))]
         return [sys.executable, *command], {}
 

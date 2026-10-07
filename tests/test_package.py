@@ -66,6 +66,21 @@ class PackageTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 prepare.load_site(path)
 
+    def test_h100x3_site_needs_a_second_generation_node_above_the_trainer(self):
+        site = json.loads((ROOT/'config/site.example.json').read_text())
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp)/'site.json'
+            path.write_text(json.dumps(site))
+            with self.assertRaises(ValueError):
+                prepare.load_site(path, 'miles', 'h100x3')
+            path.write_text(json.dumps({**site, 'generation_node_2': 'generation-node-2', 'generation_ip_2': '192.0.2.5'}))
+            with self.assertRaises(ValueError):  # Below the trainer's 192.0.2.10.
+                prepare.load_site(path, 'miles', 'h100x3')
+            path.write_text(json.dumps({**site, 'generation_node_2': 'generation-node-2', 'generation_ip_2': '192.0.2.30'}))
+            loaded = prepare.load_site(path, 'miles', 'h100x3')
+            with self.assertRaises(ValueError):
+                prepare.prepare('verl', loaded, Path(temp)/'campaign', layout='h100x3')
+
     def test_existing_destination_is_preserved(self):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaises(ValueError):

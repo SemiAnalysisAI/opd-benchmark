@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Reproduce the caesar_cipher OPD benchmark end to end: Qwen3.6-35B-A3B student, the caesar_cipher
-# GRPO teacher, the shared recipe (20 updates, thinking on, 32k context).
+# Reproduce the OPD benchmark end to end: Qwen3.6-35B-A3B student, the caesar_cipher GRPO teacher
+# (or both GRPO teachers for MOPD), the shared recipe (20 updates, thinking on, 32k context).
 #
 #   tools/reproduce.sh all                 reference benchmarks, every framework, then the report
 #   tools/reproduce.sh miles verl          chosen frameworks (miles, nemo-rl, prime-rl, slime, verl)
 #   tools/reproduce.sh references report   base and teacher benchmarks; telemetry report over finished runs
+#   tools/reproduce.sh assets              only download and fuse the models (before parallel runs)
 #
 # For each framework: assets -> prepare -> runtime -> run (blocks until the Slurm job ends) -> export
 # Hugging Face weights of every saved checkpoint -> benchmark each (the final one as <run>, earlier ones
@@ -17,7 +18,13 @@
 #   NEMO_RL_SITE    site file for NeMo-RL, which needs a third node (default config/site-nemo-rl.local.json)
 #   RUNS            campaigns and benchmark outputs (default /shared/opd-runs)
 #   NAME            campaign suffix: campaigns are $RUNS/<framework>-$NAME (default caesar)
+#   DOMAINS         tasks to train, each with its own teacher: "caesar_cipher" (default, single-teacher OPD)
+#                   or "caesar_cipher simple_geometry" (MOPD)
+#   LAYOUT          hardware layout from shared/recipe.py, Miles only: b200x2 (default) or h100x3, whose site
+#                   file also names generation_node_2 and generation_ip_2
+#   BENCH_TP        GPUs per benchmark vLLM engine (default 1; 2 on 80 GB GPUs)
 #   RUNTIME         container images, tool venv, caches, logs (default /shared/opd-runtime)
+#   SHARED          shared filesystem mounted into single-node containers (default /shared)
 #   GPU_NODE        node for single-node jobs (default: the site's trainer node)
 #   BENCH_CAMPAIGN  verl campaign whose vLLM venv runs the benchmarks (default: $RUNS/verl-$NAME, built if needed)
 #   DEADLOCK_MIN    NeMo-RL: cancel the run if its first weight sync has not finished after this many
@@ -32,8 +39,11 @@ NEMO_RL_SITE=${NEMO_RL_SITE:-$REPO/config/site-nemo-rl.local.json}
 RUNS=${RUNS:-/shared/opd-runs}
 NAME=${NAME:-caesar}
 RUNTIME=${RUNTIME:-/shared/opd-runtime}
+SHARED=${SHARED:-/shared}
 DEADLOCK_MIN=${DEADLOCK_MIN:-20}
-DOMAIN=caesar_cipher
+read -ra DOMAINS <<< "${DOMAINS:-caesar_cipher}"
+LAYOUT=${LAYOUT:-b200x2}
+BENCH_TP=${BENCH_TP:-1}
 MILES_IMAGE='docker://radixark/miles@sha256:59a11219eae0defc6594ec678fafe4e897c16904263223f79968cd3e0209a502'
 NEMO_RL_IMAGE='docker://nvcr.io#nvidia/nemo-rl:v0.7.0'
 TOOLS=$RUNTIME/tools-venv
@@ -51,10 +61,10 @@ on_node() {  # on_node GPUS [srun args...] -- command...: run one exclusive step
   while [[ $1 != -- ]]; do args+=("$1"); shift; done; shift
   srun -p "$PARTITION" -N1 -n1 -w "$(node)" --gres=gpu:"$gpus" --exclusive --time=04:00:00 "${args[@]}" bash -c "$*"
 }
-in_image() {  # in_image IMAGE GPUS -- command...: on_node in a writable container with /shared mounted
+in_image() {  # in_image IMAGE GPUS -- command...: on_node in a writable container with $SHARED mounted
   local image=$1 gpus=$2; shift 3
   on_node "$gpus" --container-image="$image" --container-writable --container-remap-root \
-    --no-container-mount-home --container-mounts=/shared:/shared -- "$@"
+    --no-container-mount-home --container-mounts="$SHARED:$SHARED" -- "$@"
 }
 campaign() { echo "$RUNS/$1-$NAME"; }
 latest_run() { python3 -c "import json; print(json.load(open('$(campaign "$1")/active-run.json'))['result'])"; }
@@ -71,11 +81,14 @@ assets() {  # download the pinned base and teacher, then fuse the teacher into t
   base=$(site "$SITE" base_model); teachers=$(site "$SITE" teachers); hub=$(site "$SITE" assets)/hub
   [[ -f $base/config.json ]] || { say "downloading the base model"; "$TOOLS/bin/hf" download "$(recipe 'recipe.BASE_MODEL[0]')" \
     --revision "$(recipe 'recipe.BASE_MODEL[1]')" --local-dir "$base" >/dev/null; }
-  [[ -f $hub/$DOMAIN/config.json ]] || { say "downloading the $DOMAIN teacher"; "$TOOLS/bin/hf" download \
-    "$(recipe "recipe.TEACHERS['$DOMAIN'][0]")" --revision "$(recipe "recipe.TEACHERS['$DOMAIN'][1]")" \
-    --local-dir "$hub/$DOMAIN" >/dev/null; }
-  [[ -f $teachers/$DOMAIN/config.json ]] || { image miles; say "fusing the teacher"; \
-    in_image "$(site "$SITE" container_image)" 1 -- python3 "$REPO/tools/fuse_teacher.py" "$hub/$DOMAIN" "$teachers/$DOMAIN" "$base"; }
+  local d
+  for d in "${DOMAINS[@]}"; do
+    [[ -f $hub/$d/config.json ]] || { say "downloading the $d teacher"; "$TOOLS/bin/hf" download \
+      "$(recipe "recipe.TEACHERS['$d'][0]")" --revision "$(recipe "recipe.TEACHERS['$d'][1]")" \
+      --local-dir "$hub/$d" >/dev/null; }
+    [[ -f $teachers/$d/config.json ]] || { image miles; say "fusing the $d teacher"; \
+      in_image "$(site "$SITE" container_image)" 1 -- python3 "$REPO/tools/fuse_teacher.py" "$hub/$d" "$teachers/$d" "$base"; }
+  done
 }
 
 image() {  # image miles|nemo-rl: import the digest- or tag-pinned container once
@@ -98,12 +111,14 @@ megatron_checkpoint() {  # Miles and Slime: convert the base model to Megatron t
       \"\${args[@]}\" --hf-checkpoint $(site "$SITE" base_model) --save $out --mtp-num-layers 1"
 }
 
-prepare() {  # create the single-task campaign with tools/prepare.py
-  local fw=$1 site=$SITE
+prepare() {  # create the campaign for DOMAINS with tools/prepare.py
+  local fw=$1 site=$SITE layout=b200x2
   [[ $fw == nemo-rl ]] && site=$NEMO_RL_SITE
+  [[ $fw == miles ]] && layout=$LAYOUT  # Other frameworks run b200x2 (verl's campaign also hosts the benchmarks).
   [[ -d $(campaign "$fw") ]] && return
   say "preparing $(campaign "$fw")"
-  python3 "$REPO/tools/prepare.py" "$fw" --site "$site" --output "$(campaign "$fw")" --domains "$DOMAIN"
+  python3 "$REPO/tools/prepare.py" "$fw" --site "$site" --output "$(campaign "$fw")" --domains "${DOMAINS[@]}" \
+    --layout "$layout"
 }
 
 flashinfer() {  # install prebuilt FlashInfer kernels matching the venv's flashinfer-python version
@@ -211,7 +226,7 @@ benchmark() {  # benchmark NAME MODEL: run tools/benchmark.py on one node with t
   say "benchmarking $name"
   on_node 8 -- "unset ROCR_VISIBLE_DEVICES; export CAMPAIGN_PYDEPS=$v/pydeps HF_HUB_OFFLINE=1 PYTHONNOUSERSITE=1 \
     VLLM_CACHE_ROOT=$v/runtime-cache/vllm FLASHINFER_WORKSPACE_BASE=$v/runtime-cache TRITON_CACHE_DIR=$v/runtime-cache/triton; \
-    $v/source/.venv/bin/python $REPO/tools/benchmark.py $model $out --domains caesar_cipher simple_geometry"
+    $v/source/.venv/bin/python $REPO/tools/benchmark.py $model $out --domains caesar_cipher simple_geometry --tp $BENCH_TP"
 }
 
 framework() {
@@ -230,7 +245,10 @@ framework() {
 references() {
   tools; assets
   benchmark base "$(site "$SITE" base_model)"
-  benchmark teacher-caesar "$(site "$SITE" teachers)/$DOMAIN"
+  local d
+  for d in "${DOMAINS[@]}"; do  # teacher-caesar, teacher-geometry
+    benchmark "teacher-$(sed 's/_cipher$//; s/^simple_//' <<< "$d")" "$(site "$SITE" teachers)/$d"
+  done
 }
 
 report() {
@@ -246,6 +264,7 @@ report() {
 for target in "$@"; do
   case $target in
   miles|prime-rl|slime|verl|nemo-rl) framework "$target" || say "$target failed; continuing" ;;
+  assets) tools; assets ;;
   references) references ;;
   report) report ;;
   *) echo "Unknown target: $target"; exit 2 ;;

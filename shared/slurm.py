@@ -33,6 +33,12 @@ def site():
     return json.loads((ROOT / 'site.json').read_text())
 
 
+def generation_hosts(s):
+    """(node, IP) of each generation node: the site's `generation_node`, then `generation_node_2` (h100x3)."""
+    suffixes = ['', '_2'][:recipe.GENERATION_NODES]
+    return [(s[f'generation_node{x}'], s[f'generation_ip{x}']) for x in suffixes]
+
+
 def result_dir():
     return Path(os.environ['CAMPAIGN_RESULT'])
 
@@ -134,9 +140,9 @@ def _signal_group(process, number):
 class Allocation:
     """One campaign run inside a Slurm allocation: run records, per-role steps and shutdown.
 
-    Two nodes, or three when the site file names a `teacher_node` (NeMo-RL).
-    In `run`, the learner's exit status becomes the run's status; the generation
-    role only serves the learner, so an early exit there is a failure.
+    Two nodes, or three for the h100x3 layout or when the site file names a `teacher_node` (NeMo-RL).
+    In `run`, the learner's exit status becomes the run's status; every other role
+    only serves the learner, so an early exit there is a failure.
     """
 
     def __init__(self, framework):
@@ -149,7 +155,7 @@ class Allocation:
         self.result.mkdir(parents=True, exist_ok=False)
         nodes = subprocess.check_output(['scontrol', 'show', 'hostnames', os.environ['SLURM_JOB_NODELIST']],
                                         text=True).split()
-        expected = [self.site['generation_node'], self.site['trainer_node'],
+        expected = [*(node for node, _ in generation_hosts(self.site)), self.site['trainer_node'],
                     *([self.site['teacher_node']] if 'teacher_node' in self.site else [])]
         if sorted(nodes) != sorted(expected):  # Slurm lists nodes in its own order; `srun -w` pins each role.
             raise RuntimeError(f'Allocated nodes {nodes} differ from the site file {expected}')
@@ -171,8 +177,9 @@ class Allocation:
             for role, command in steps.items():
                 roles.launch(command, role, env=env, log=self.result / f'{role}-driver.out')
             while roles.children['learner'].poll() is None:
-                if roles.children['generation'].poll() is not None:
-                    raise RuntimeError(f'Generation exited early with {roles.children["generation"].returncode}')
+                for role, child in roles.children.items():
+                    if role != 'learner' and child.poll() is not None:
+                        raise RuntimeError(f'{role} exited early with {child.returncode}')
                 time.sleep(5)
             code = roles.children['learner'].returncode
         finally:

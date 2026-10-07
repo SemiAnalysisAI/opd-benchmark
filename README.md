@@ -7,7 +7,7 @@ The current experiment is multi-teacher OPD (MOPD): Qwen3.6-35B-A3B learns from 
 ## Status
 
 - The single-teacher `caesar_cipher` variant (`--domains caesar_cipher`) has run on GPUs in Miles, Prime-RL, Slime and verl. NeMo-RL deadlocked before its first update. See the [benchmark report](docs/CAESAR-OPD-2026-09-27.md).
-- The two-teacher MOPD experiment has not been run with this code.
+- The two-teacher MOPD experiment ran in Miles, Prime-RL and verl on 16 B200 GPUs (benchmarks and telemetry in [`docs/mopd-2026-09-29/data`](docs/mopd-2026-09-29/data)). Miles is now running it on 24 H100 80 GB GPUs with the `h100x3` layout: see the [H100 MOPD report](docs/MOPD-H100-2026-10-07.md), with results in [`docs/mopd-h100-2026-10-07`](docs/mopd-h100-2026-10-07).
 - A previous experiment (Countdown and Graph Coloring, thinking off) completed in Miles, Prime-RL and Slime on two nodes of eight B200 GPUs. See [provenance](docs/PROVENANCE.md).
 
 Results are single observations and do not rank the frameworks. The implementations differ in objective, scheduling, precision and checkpoint content, and maximum useful GPU utilization was not demonstrated.
@@ -48,8 +48,8 @@ Replace `slime` with `miles`, `prime-rl`, `verl` or `nemo-rl`. NeMo-RL needs thr
 | `hosted/` | Tinker and Fireworks campaigns, each with its own protocol, and the hosted OPD/MOPD loop ([README](hosted/opd/README.md)) |
 | `data/` | Compressed task rows and their hashes |
 | `config/` | Example site and hosted-account files ([README](config/README.md)) |
-| `tools/` | Preparation, teacher fusing, guarded submission, source verification, benchmarking, reporting, `reproduce.sh` |
-| `docs/` | [Setup](docs/SETUP.md), [provenance](docs/PROVENANCE.md), [validation](docs/VALIDATION.md), [caesar_cipher benchmark](docs/CAESAR-OPD-2026-09-27.md) |
+| `tools/` | Preparation, teacher fusing, guarded submission, source verification, benchmarking, reporting, plots (`plot.py`), `reproduce.sh` |
+| `docs/` | [Setup](docs/SETUP.md), [provenance](docs/PROVENANCE.md), [validation](docs/VALIDATION.md), [caesar_cipher benchmark](docs/CAESAR-OPD-2026-09-27.md), [H100 MOPD report](docs/MOPD-H100-2026-10-07.md), benchmark data under `docs/*/data` and `docs/mopd-h100-2026-10-07` |
 
 ## Checks
 
