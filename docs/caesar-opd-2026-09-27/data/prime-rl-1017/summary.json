@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-runs/prime-rl-caesar-01/checkpoints/prime-rl-1017/checkpoints/step_20/weights",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 388.1367473602295,
+  "output_tokens_per_second": 44536.09228594062,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7787698412698413,
+      "pass@8": 0.9920634920634921,
+      "finished_thinking": 0.9484126984126984,
+      "truncated": 0.05654761904761905,
+      "response_tokens_mean": 13256.776785714286,
+      "response_tokens_median": 11490.0
+    },
+    "simple_geometry": {
+      "avg@8": 0.7041015625,
+      "pass@8": 1.0,
+      "finished_thinking": 1.0,
+      "truncated": 0.0,
+      "response_tokens_mean": 3831.3115234375,
+      "response_tokens_median": 3815.5
+    }
+  }
+}

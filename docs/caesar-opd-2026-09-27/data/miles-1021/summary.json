@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-runs/miles-caesar-02/checkpoints/miles-1021/hf/iter_19",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 380.1805899143219,
+  "output_tokens_per_second": 44872.39341662493,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7757936507936508,
+      "pass@8": 0.9920634920634921,
+      "finished_thinking": 0.9464285714285714,
+      "truncated": 0.057539682539682536,
+      "response_tokens_mean": 13055.827380952382,
+      "response_tokens_median": 11226.5
+    },
+    "simple_geometry": {
+      "avg@8": 0.6591796875,
+      "pass@8": 0.9921875,
+      "finished_thinking": 0.99609375,
+      "truncated": 0.00390625,
+      "response_tokens_mean": 3807.9482421875,
+      "response_tokens_median": 3623.5
+    }
+  }
+}

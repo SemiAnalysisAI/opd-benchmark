@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-assets/models/Qwen3.6-35B-A3B",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 374.07481622695923,
+  "output_tokens_per_second": 42745.65222348055,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.26785714285714285,
+      "pass@8": 0.7222222222222222,
+      "finished_thinking": 0.9474206349206349,
+      "truncated": 0.054563492063492064,
+      "response_tokens_mean": 12181.030753968254,
+      "response_tokens_median": 9989.0
+    },
+    "simple_geometry": {
+      "avg@8": 0.529296875,
+      "pass@8": 0.9921875,
+      "finished_thinking": 0.99609375,
+      "truncated": 0.00390625,
+      "response_tokens_mean": 3624.6025390625,
+      "response_tokens_median": 3177.5
+    }
+  }
+}

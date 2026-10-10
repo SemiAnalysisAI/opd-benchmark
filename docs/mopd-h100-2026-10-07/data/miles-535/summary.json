@@ -1,0 +1,27 @@
+{
+  "model": "/mnt/data/opd/runs/miles-mopd-h100/checkpoints/miles-535/hf/iter_19",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "tp": 2,
+  "generation_seconds": 862.1017329692841,
+  "output_tokens_per_second": 18668.582122631487,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7728174603174603,
+      "pass@8": 0.9920634920634921,
+      "finished_thinking": 0.9494047619047619,
+      "truncated": 0.05357142857142857,
+      "response_tokens_mean": 13043.654761904761,
+      "response_tokens_median": 11065.0
+    },
+    "simple_geometry": {
+      "avg@8": 0.998046875,
+      "pass@8": 1.0,
+      "finished_thinking": 1.0,
+      "truncated": 0.0,
+      "response_tokens_mean": 2877.1611328125,
+      "response_tokens_median": 2426.0
+    }
+  }
+}

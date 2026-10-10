@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-assets/teachers/caesar_cipher",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 366.0560100078583,
+  "output_tokens_per_second": 45223.71589977342,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7212301587301587,
+      "pass@8": 0.9841269841269841,
+      "finished_thinking": 0.9563492063492064,
+      "truncated": 0.044642857142857144,
+      "response_tokens_mean": 12579.578373015873,
+      "response_tokens_median": 11050.5
+    },
+    "simple_geometry": {
+      "avg@8": 0.587890625,
+      "pass@8": 0.9921875,
+      "finished_thinking": 0.998046875,
+      "truncated": 0.001953125,
+      "response_tokens_mean": 3783.396484375,
+      "response_tokens_median": 3549.0
+    }
+  }
+}

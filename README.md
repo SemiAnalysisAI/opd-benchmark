@@ -1,64 +1,63 @@
-# Multi-teacher on-policy distillation
+# On-policy distillation
 
-This repository preserves the scripts for three completed experiments with Miles, Prime-RL, and Slime.
-Each experiment trains Qwen3.6-35B-A3B with frozen Countdown and Graph Coloring teachers.
+On-policy distillation (OPD) experiments across five training frameworks: Miles, NeMo-RL, Prime-RL, Slime and verl.
 
-**The original experiments completed. The portable package has passed local checks, but it has not been rerun on GPUs.**
-The runtime image and converted model checkpoints are external prerequisites. This repository is not a self-contained container distribution.
+The current experiment is multi-teacher OPD (MOPD): Qwen3.6-35B-A3B learns from frozen reasoning_gym GRPO teachers for `caesar_cipher` and `simple_geometry`. Thinking is on everywhere (training, teachers and evaluation), with a 32k context and up to 30,720 response tokens.
 
-## Start here
+## Status
 
-1. Read [the setup guide](docs/SETUP.md), including the runtime and checkpoint requirements.
-2. Copy `site.example.json` to `site.local.json` and supply your node names, addresses, and paths.
-3. Run `python3 tools/prepare.py slime --site site.local.json --output /shared/opd-runs/slime-01` on the shared filesystem.
-4. Complete the framework setup and inspect the command with `python3 tools/submit.py /shared/opd-runs/slime-01 --partition YOUR_PARTITION`.
-5. Add `--submit` only when you intend to allocate 16 GPUs. The command remains attached and writes `allocation.out`.
+- The single-teacher `caesar_cipher` variant (`--domains caesar_cipher`) has run on GPUs in Miles, Prime-RL, Slime and verl. NeMo-RL deadlocked before its first update. See the [benchmark report](docs/CAESAR-OPD-2026-09-27.md).
+- The two-teacher MOPD experiment ran in Miles, Prime-RL and verl on 16 B200 GPUs (benchmarks and telemetry in [`docs/mopd-2026-09-29/data`](docs/mopd-2026-09-29/data)). Miles also ran it on 24 H100 80 GB GPUs with the `h100x3` layout: after 20 updates the student scores 0.773 avg@8 on caesar_cipher and 0.998 on simple_geometry (teachers 0.703 and 0.996). See the [H100 MOPD report](docs/MOPD-H100-2026-10-07.md); benchmarks and telemetry are in [`docs/mopd-h100-2026-10-07/data`](docs/mopd-h100-2026-10-07/data).
+- A previous experiment (Countdown and Graph Coloring, thinking off) completed in Miles, Prime-RL and Slime on two nodes of eight B200 GPUs. See [provenance](docs/PROVENANCE.md).
 
-Replace `slime` with `miles` or `prime-rl` to prepare another framework. Use a new campaign directory for each experiment.
-Preparation clones source and writes files, but does not submit a GPU job or download model weights.
-An existing campaign directory is never overwritten.
+Results are single observations and do not rank the frameworks. The implementations differ in objective, scheduling, precision and checkpoint content, and maximum useful GPU utilization was not demonstrated.
 
-## What is included
+## Quick start
 
-| Directory | Contents |
+The runtime image and converted checkpoints are external prerequisites; the [setup guide](docs/SETUP.md) covers them.
+
+To rerun the whole `caesar_cipher` benchmark (every framework, checkpoint benchmarks and the telemetry report), fill in `config/site.local.json` and run this on a Slurm login node:
+
+```bash
+PARTITION=YOUR_PARTITION tools/reproduce.sh all
+```
+
+See [One command: `tools/reproduce.sh`](docs/SETUP.md#one-command-toolsreproducesh) for its settings.
+
+To run one framework by hand:
+
+1. Read the [framework overview](frameworks/README.md) and the [setup guide](docs/SETUP.md).
+2. Copy `config/site.example.json` to `config/site.local.json` and fill in your nodes, addresses and paths.
+3. Prepare a campaign:
+   ```bash
+   python3 tools/prepare.py slime --site config/site.local.json --output /shared/opd-runs/slime-01
+   ```
+4. Print the allocation, then add `--submit` to allocate 16 GPUs:
+   ```bash
+   python3 tools/submit.py /shared/opd-runs/slime-01 --partition YOUR_PARTITION
+   ```
+
+Replace `slime` with `miles`, `prime-rl`, `verl` or `nemo-rl`. NeMo-RL needs three nodes and `config/site-nemo-rl.example.json`. Preparation never overwrites a directory, submits a job or downloads weights.
+
+## Layout
+
+| Path | Contents |
 |---|---|
-| `frameworks/miles/` | The fully async candidate-based objective, domain-balanced buffer, scoring retries, and instrumentation. |
-| `frameworks/prime-rl/` | Native per-source OPD, configuration generation, task environment, and the frozen-vision compatibility patch. |
-| `frameworks/slime/` | Native batched async OPD, teacher routing, baseline evaluation, timing, and runtime compatibility patches. |
-| `data/` | The exact compressed puzzle files and hashes of their uncompressed contents. |
-| `tools/` | Preparation, guarded Slurm submission, and source reconstruction checks. |
-
-The files in `campaign/` are templates. Values such as `@BASE_MODEL@` are replaced during preparation.
-Run the prepared copies rather than the templates. Each manifest records the upstream revision, patch digest, and original archive digest.
-The [provenance document](docs/PROVENANCE.md) identifies packaging changes and scientific differences.
-
-The separate [Tinker campaign](frameworks/tinker/README.md) trains hosted puzzle
-teachers and a 40-update student through the Tinker SDK. It retains remote
-checkpoints and local evidence without downloading model weights. See its own
-protocol for LoRA, objective, and teacher-comparability differences; it does not
-use the Slurm preparation or submission tools below.
-
-## Fixed experiment
-
-The experiments use 40 optimizer updates, 128 prompts per update, one response per prompt, learning rate 1e-6, and a 256-token response limit.
-The GPU allocation contains eight trainer GPUs, six policy GPUs, and one GPU per frozen teacher.
-Each experiment uses two nodes with eight NVIDIA B200 GPUs each. Evaluation uses 512 development prompts per domain with thinking disabled.
-
-The implementations have different objectives, scheduling, precision choices, and checkpoint content.
-These experiments are individual observations and do not establish a framework ranking.
-The sampled utilization did not demonstrate maximum useful utilization. No GPU profiler was enabled.
+| `shared/` | Recipe, data checks, verifier, Slurm and container runtime, telemetry |
+| `frameworks/` | Per-framework code, each with its pinned `upstream/` revision and patch, if any |
+| `hosted/` | Tinker and Fireworks campaigns, each with its own protocol, and the hosted OPD/MOPD loop ([README](hosted/opd/README.md)) |
+| `data/` | Compressed task rows and their hashes |
+| `config/` | Example site and hosted-account files ([README](config/README.md)) |
+| `tools/` | Preparation, teacher fusing, guarded submission, source verification, benchmarking, reporting, plots (`plot.py`), `reproduce.sh` |
+| `docs/` | [Setup](docs/SETUP.md), [provenance](docs/PROVENANCE.md), [validation](docs/VALIDATION.md), [caesar_cipher benchmark](docs/CAESAR-OPD-2026-09-27.md), [H100 MOPD report](docs/MOPD-H100-2026-10-07.md), benchmark data under `docs/*/data` and `docs/mopd-h100-2026-10-07` |
 
 ## Checks
 
-Python 3.12 is required for the preparation tools and archived campaign code.
-The following checks need no GPU and do not contact the cluster.
+Python 3.12 is required. These checks need no GPU:
 
 ```bash
 python3 -m unittest discover -s tests -v
 git diff --check
 ```
 
-Raw logs, model weights, generated checkpoints, local credentials, and site configuration are excluded from Git.
-Keep run artifacts outside this checkout and retain their source snapshot, resolved configuration, exit status, and checksums.
-The old repository contents remain in Git history at `a1bf83efd1a5cf11ef72b3ea18eb98132d83c92e`.
-This change does not remove old data from Git history or change repository visibility.
+Raw logs, weights, checkpoints, credentials and local config files are kept out of Git. Earlier repository contents remain in history at `a1bf83efd1a5cf11ef72b3ea18eb98132d83c92e`.

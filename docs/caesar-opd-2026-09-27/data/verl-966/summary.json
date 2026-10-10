@@ -1,0 +1,26 @@
+{
+  "model": "/shared/opd-runs/verl-caesar-01/checkpoints/verl-966/global_step_20/actor/huggingface-merged",
+  "samples": 8,
+  "seed": 0,
+  "gpus": 8,
+  "generation_seconds": 389.5900001525879,
+  "output_tokens_per_second": 44689.9458229956,
+  "domains": {
+    "caesar_cipher": {
+      "avg@8": 0.7837301587301587,
+      "pass@8": 1.0,
+      "finished_thinking": 0.9444444444444444,
+      "truncated": 0.05654761904761905,
+      "response_tokens_mean": 13253.779761904761,
+      "response_tokens_median": 11453.0
+    },
+    "simple_geometry": {
+      "avg@8": 0.6865234375,
+      "pass@8": 1.0,
+      "finished_thinking": 0.9970703125,
+      "truncated": 0.0029296875,
+      "response_tokens_mean": 3956.001953125,
+      "response_tokens_median": 3704.0
+    }
+  }
+}
