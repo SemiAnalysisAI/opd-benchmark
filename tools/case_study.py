@@ -144,10 +144,10 @@ def verl_updates(result, root, base_model):
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(base_model)
     prompts = {}  # user prompt -> task, from the packaged training data
-    for path in sorted((root / 'data').glob('*-train.jsonl.gz')):
-        task = path.name.removesuffix('-train.jsonl.gz')
+    for path in sorted((root / 'data').glob('*-train.jsonl*')):  # .jsonl in a campaign, .jsonl.gz in the repo
+        task = path.name.split('-train.jsonl')[0]
         if task in TASKS:
-            with gzip.open(path, 'rt') as stream:
+            with (gzip.open(path, 'rt') if path.suffix == '.gz' else path.open()) as stream:
                 prompts.update((json.loads(l)['prompt'][-1]['content'].strip(), task) for l in stream)
     logged = {}
     for log in [result / 'learner-train.out', *sorted(result.glob('*trainer-worker.out'))]:
