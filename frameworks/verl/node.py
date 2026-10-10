@@ -6,6 +6,8 @@ places its own resource pools on it: the trainer on one node, the policy engines
 """
 
 import os
+from pathlib import Path
+import shutil
 import socket
 import subprocess
 import sys
@@ -58,6 +60,19 @@ def wait_for_gpus(head, processes, timeout=300):
     ray.shutdown()
 
 
+def keep_trainer_log(result, role):
+    """Copy the trainer actor's Ray worker log, which holds verl's per-step console metrics, into the result.
+
+    Ray keeps worker logs on the node that ran them and does not always forward them to the driver.
+    """
+    try:
+        for log in Path('/tmp/ray/session_latest/logs').glob('worker-*.out'):
+            if b'training/global_step' in log.read_bytes():
+                shutil.copyfile(log, result / f'{role}-trainer-worker.out')
+    except OSError as error:
+        print(f'could not copy the trainer log: {error}', file=sys.stderr)
+
+
 def main(role):
     s, result = site(), result_dir()
     ip = s['trainer_ip' if role == 'learner' else 'generation_ip']
@@ -98,6 +113,7 @@ def main(role):
             time.sleep(3)
         return 0
     finally:
+        keep_trainer_log(result, role)
         processes.stop_all()
 
 

@@ -4,7 +4,8 @@ Follows upstream `examples/on_policy_distillation_trainer` (teachers routed by `
 sampled-token k1 reverse KL applied as a policy gradient, no task reward), run on
 `verl.experimental.fully_async_policy` with FSDP training and vLLM serving. The learner role runs
 this from the campaign's `source/` and saves the overrides as `argv.json`. `compute_score` is verl's
-reward hook; its score is diagnostic only.
+reward hook; its score is diagnostic only. Each trained batch, with its scores, is written to
+`<result>/rollouts/<step>.jsonl`.
 """
 import json
 import os
@@ -51,11 +52,16 @@ def overrides(result, train, dev):
         entry = 'distillation.teacher_models.teacher_model'
         teachers = [f'{entry}.model_path={s["teachers"]}/{r.DOMAINS[0]}', *(f'{entry}.{x}' for x in inference)]
     else:
+        # Named entries do not inherit the `teacher_model` block of distillation.yaml; they start from
+        # RolloutConfig, whose load_format is "dummy" (random weights) and whose prompt and response
+        # lengths are 512. Set the values the default entry would have.
+        named = [*inference, 'inference.load_format=auto', 'inference.enforce_eager=True',
+                 f'inference.prompt_length={prompt_tokens}', f'inference.response_length={r.MAX_RESPONSE_TOKENS}']
         teachers = [value for d in r.DOMAINS for value in (
             f'+distillation.teacher_models.{d}.key={d}',
             f'+distillation.teacher_models.{d}.model_path={s["teachers"]}/{d}',
             f'+distillation.teacher_models.{d}.num_replicas=1',
-            *(f'+distillation.teacher_models.{d}.{x}' for x in inference))]
+            *(f'+distillation.teacher_models.{d}.{x}' for x in named))]
     return [
         # Data: one prompt at a time; with two domains, the mixed file interleaves them.
         f'data.train_files=["{train}"]', f'data.val_files={json.dumps([str(p) for p in dev])}',
@@ -105,6 +111,7 @@ def overrides(result, train, dev):
         'trainer.nnodes=1', f'trainer.n_gpus_per_node={r.TRAINER_GPUS}', 'trainer.total_epochs=1', 'trainer.balance_batch=True',
         'trainer.val_before_train=True', f'trainer.test_freq={r.EVAL_INTERVAL}', f'trainer.save_freq={r.SAVE_INTERVAL}',
         f'trainer.default_local_dir={ROOT / "checkpoints" / result.name}', 'trainer.logger=["console","tensorboard"]',
+        f'trainer.rollout_data_dir={result / "rollouts"}',
         'trainer.project_name=opd', f'trainer.experiment_name={result.name}']
 
 
