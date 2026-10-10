@@ -22,7 +22,7 @@ import re
 import statistics
 import sys
 
-TRAINER_GPUS, POLICY_GPUS, TEACHER_GPUS, BATCH = 8, 12, 4, 128
+TRAINER_GPUS, POLICY_GPUS, GPUS_PER_TEACHER, BATCH = 8, 12, 2, 128  # h100x3
 
 
 def console_metrics(result):
@@ -126,6 +126,9 @@ def sample_lengths(result, tokenizer):
 def main(result, out):
     result = Path(result)
     site = json.loads((result.parents[1] / 'site.json').read_text())
+    experiment = result.parents[1] / 'experiment.json'
+    domains = json.loads(experiment.read_text()).get('domains', [1, 2]) if experiment.exists() else [1, 2]
+    teacher_gpus = GPUS_PER_TEACHER * len(domains)  # 2 for single-teacher OPD, 4 for MOPD
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(site['base_model'])
     metrics, ends = console_metrics(result), update_ends(result)
@@ -156,7 +159,7 @@ def main(result, out):
             'stale_filtered': dropped, 'filtered_ratio': dropped / (dropped + BATCH),
             'effective_tok_s_gpu_policy': sum(p + r for p, r in samples) / (t1 - t0) / POLICY_GPUS if samples else None,
             'teacher_p50_s': teacher_p50,
-            'teacher_tok_s_gpu': teacher_tokens / (t1 - t0) / TEACHER_GPUS if teacher_tokens else None,
+            'teacher_tok_s_gpu': teacher_tokens / (t1 - t0) / teacher_gpus if teacher_tokens else None,
             'window_s': t1 - t0, 'samples_dumped': len(samples)})
         previous_end, previous_dropped = t1, dropped_total
     Path(out).write_text(json.dumps(rows, indent=1) + '\n')
