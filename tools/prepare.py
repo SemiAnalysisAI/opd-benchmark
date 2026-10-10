@@ -28,7 +28,7 @@ REQUIRED = PATH_FIELDS + HOST_FIELDS
 NEMO_RL_FIELDS = ('teacher_node', 'teacher_ip', 'nemo_rl_container')
 # The h100x3 layout's second generation node.
 H100X3_FIELDS = ('generation_node_2', 'generation_ip_2')
-LAYOUT_FRAMEWORKS = {'b200x2': FRAMEWORKS, 'h100x3': ('miles', 'verl')}
+LAYOUT_FRAMEWORKS = {'b200x2': FRAMEWORKS, 'h100x3': ('miles', 'verl'), 'h100x2': ('verl',)}
 SAFE_VALUE = r'[A-Za-z0-9_./:+-]+'
 
 
@@ -78,6 +78,8 @@ def prepare(framework, site, output, source_cache=None, domains=None, layout='b2
     output = output.resolve()
     if framework not in LAYOUT_FRAMEWORKS[layout]:
         raise ValueError(f'The {layout} layout supports only {LAYOUT_FRAMEWORKS[layout]}')
+    if layout == 'h100x2' and len(domains or recipe.ALL_DOMAINS) != 1:
+        raise ValueError('The h100x2 layout has room for one teacher; pass one task with --domains')
     if not re.fullmatch(SAFE_VALUE, str(output)):
         raise ValueError('The campaign path cannot contain whitespace or shell metacharacters')
     if output.exists():

@@ -72,13 +72,16 @@ MEGATRON_MODEL_DIR = 'Qwen3.6-35B-A3B_torch_dist'
 #           on GPUs 2-7. The 12 policy GPUs double b200x2's six. The trainer node keeps Adam on the CPU
 #           and splits each sequence over two GPUs (Miles: context parallelism 2; verl: Ulysses
 #           sequence parallelism 2). verl places its own pools, so its GPU indices may differ.
-LAYOUTS = ('b200x2', 'h100x3')
+#   h100x2  Two 8 x H100 80 GB nodes, verl single-teacher OPD only: the trainer node as in h100x3, and one
+#           generation node with the teacher on GPUs 0-1 (TP2) and the policy on GPUs 2-7.
+LAYOUTS = ('b200x2', 'h100x3', 'h100x2')
 LAYOUT = EXPERIMENT.get('layout', 'b200x2')
 assert LAYOUT in LAYOUTS, LAYOUT
-H100 = LAYOUT == 'h100x3'
+H100 = LAYOUT in ('h100x3', 'h100x2')
+assert LAYOUT != 'h100x2' or len(DOMAINS) == 1, 'h100x2 has room for one teacher'
 GPUS_PER_NODE = 8
 TRAINER_GPUS = 8
-GENERATION_NODES = 2 if H100 else 1
+GENERATION_NODES = 2 if LAYOUT == 'h100x3' else 1
 TEACHER_GPU = {domain: gpu for gpu, domain in enumerate(DOMAINS)}  # b200x2: one GPU per teacher
 # Per domain: (generation node index, GPUs on that node). One engine per teacher.
 TEACHER_GPUS_PER_ENGINE = 2 if H100 else 1

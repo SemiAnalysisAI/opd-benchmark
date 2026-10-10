@@ -20,8 +20,8 @@
 #   NAME            campaign suffix: campaigns are $RUNS/<framework>-$NAME (default caesar)
 #   DOMAINS         tasks to train, each with its own teacher: "caesar_cipher" (default, single-teacher OPD)
 #                   or "caesar_cipher simple_geometry" (MOPD)
-#   LAYOUT          hardware layout from shared/recipe.py, Miles and verl: b200x2 (default) or h100x3, whose site
-#                   file also names generation_node_2 and generation_ip_2
+#   LAYOUT          hardware layout from shared/recipe.py: b200x2 (default); h100x3 (Miles, verl), whose site
+#                   file also names generation_node_2 and generation_ip_2; or h100x2 (verl single-teacher OPD)
 #   BENCH_TP        GPUs per benchmark vLLM engine (default 1; 2 on 80 GB GPUs)
 #   RUNTIME         container images, tool venv, caches, logs (default /shared/opd-runtime)
 #   SHARED          shared filesystem mounted into single-node containers (default /shared)

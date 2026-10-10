@@ -22,7 +22,7 @@ import re
 import statistics
 import sys
 
-TRAINER_GPUS, POLICY_GPUS, GPUS_PER_TEACHER, BATCH = 8, 12, 2, 128  # h100x3
+TRAINER_GPUS, GPUS_PER_TEACHER, BATCH = 8, 2, 128  # h100x3 and h100x2
 
 
 def console_metrics(result):
@@ -127,7 +127,9 @@ def main(result, out):
     result = Path(result)
     site = json.loads((result.parents[1] / 'site.json').read_text())
     experiment = result.parents[1] / 'experiment.json'
-    domains = json.loads(experiment.read_text()).get('domains', [1, 2]) if experiment.exists() else [1, 2]
+    experiment = json.loads(experiment.read_text()) if experiment.exists() else {}
+    domains = experiment.get('domains', [1, 2])
+    POLICY_GPUS = 6 if experiment.get('layout') == 'h100x2' else 12
     teacher_gpus = GPUS_PER_TEACHER * len(domains)  # 2 for single-teacher OPD, 4 for MOPD
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(site['base_model'])
