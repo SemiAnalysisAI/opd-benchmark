@@ -20,7 +20,7 @@
 #   NAME            campaign suffix: campaigns are $RUNS/<framework>-$NAME (default caesar)
 #   DOMAINS         tasks to train, each with its own teacher: "caesar_cipher" (default, single-teacher OPD)
 #                   or "caesar_cipher simple_geometry" (MOPD)
-#   LAYOUT          hardware layout from shared/recipe.py, Miles only: b200x2 (default) or h100x3, whose site
+#   LAYOUT          hardware layout from shared/recipe.py, Miles and verl: b200x2 (default) or h100x3, whose site
 #                   file also names generation_node_2 and generation_ip_2
 #   BENCH_TP        GPUs per benchmark vLLM engine (default 1; 2 on 80 GB GPUs)
 #   RUNTIME         container images, tool venv, caches, logs (default /shared/opd-runtime)
@@ -114,7 +114,7 @@ megatron_checkpoint() {  # Miles and Slime: convert the base model to Megatron t
 prepare() {  # create the campaign for DOMAINS with tools/prepare.py
   local fw=$1 site=$SITE layout=b200x2
   [[ $fw == nemo-rl ]] && site=$NEMO_RL_SITE
-  [[ $fw == miles ]] && layout=$LAYOUT  # Other frameworks run b200x2 (verl's campaign also hosts the benchmarks).
+  [[ $fw == miles || $fw == verl ]] && layout=$LAYOUT  # Other frameworks run b200x2.
   [[ -d $(campaign "$fw") ]] && return
   say "preparing $(campaign "$fw")"
   python3 "$REPO/tools/prepare.py" "$fw" --site "$site" --output "$(campaign "$fw")" --domains "${DOMAINS[@]}" \

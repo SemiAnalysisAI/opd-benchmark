@@ -79,7 +79,7 @@ class PackageTests(unittest.TestCase):
             path.write_text(json.dumps({**site, 'generation_node_2': 'generation-node-2', 'generation_ip_2': '192.0.2.30'}))
             loaded = prepare.load_site(path, 'miles', 'h100x3')
             with self.assertRaises(ValueError):
-                prepare.prepare('verl', loaded, Path(temp)/'campaign', layout='h100x3')
+                prepare.prepare('prime-rl', loaded, Path(temp)/'campaign', layout='h100x3')
 
     def test_existing_destination_is_preserved(self):
         with tempfile.TemporaryDirectory() as temp:

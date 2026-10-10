@@ -55,7 +55,15 @@ The student trains as a text model (no `model.vlm`), so the trainer keeps fp32 m
 
 ### verl
 
-verl runs unmodified and follows upstream `examples/on_policy_distillation_trainer` on `verl.experimental.fully_async_policy`. It trains with FSDP and places its own trainer, rollout and teacher pools on the two-node Ray cluster, so Ray chooses the physical GPU assignment on the generation node. It streams prompts, so each update has 128 responses but not an exact 64/64 task split.
+verl runs unmodified and follows upstream `examples/on_policy_distillation_trainer` on `verl.experimental.fully_async_policy`. It trains with FSDP and places its own trainer, rollout and teacher pools on the Ray cluster, so Ray chooses which node and GPUs each pool gets. It streams prompts, so each update has 128 responses but not an exact 64/64 task split.
+
+On `h100x3` (run 547, matched to Miles run 535):
+
+- Trainer: FSDP2 with `CPUOffloadPolicy`, so the Adam step runs on the CPU as in Miles, and Ulysses sequence parallelism 2. verl's `optimizer_offload` alone moves the Adam states back to the GPU for the step and ran out of memory (job 543). With the parameters on the CPU the trainer peaks at 14 GB, so each GPU takes a full 32k-token micro-batch, which halves the parameter copies per update.
+- At most 160 samples in flight (27 per policy engine) and `staleness_threshold=1`, Miles' policy lag 1. verl's threshold is a fraction of a batch per weight sync; 0.25 (job 544) also capped generation at 160 samples per sync, and the trainer waited a median 78 s per update.
+- Evaluation only after the last update, as in Miles.
+- Compiled-kernel caches stay on each node's local disk: on CoreWeave's NFS, engines compiling into one shared cache hit "Stale file handle" and hung (job 542).
+- vLLM request statistics are on (`disable_log_stats=False`) and `shared/capture.py --vllm` scrapes every policy and teacher server; `tools/schema_verl.py` turns a run into the case-study columns.
 
 ### Memory
 

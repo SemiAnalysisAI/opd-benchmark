@@ -28,7 +28,7 @@ REQUIRED = PATH_FIELDS + HOST_FIELDS
 NEMO_RL_FIELDS = ('teacher_node', 'teacher_ip', 'nemo_rl_container')
 # The h100x3 layout's second generation node.
 H100X3_FIELDS = ('generation_node_2', 'generation_ip_2')
-LAYOUT_FRAMEWORKS = {'b200x2': FRAMEWORKS, 'h100x3': ('miles',)}
+LAYOUT_FRAMEWORKS = {'b200x2': FRAMEWORKS, 'h100x3': ('miles', 'verl')}
 SAFE_VALUE = r'[A-Za-z0-9_./:+-]+'
 
 

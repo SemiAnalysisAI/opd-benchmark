@@ -17,17 +17,17 @@ Site file rules, enforced by `tools/prepare.py`:
 
 Replace the documentation-only addresses in `config/site.example.json` with routable ones. Do not expose Ray or model endpoints publicly.
 
-### H100 layout (`h100x3`, Miles only)
+### H100 layout (`h100x3`, Miles and verl)
 
-A 35B teacher does not fit on one 80 GB GPU, and Adam states for 35B do not fit next to 32k-token activations. Without context parallelism the trainer ran out of memory in the backward pass of a full-length sequence once responses grew (run 533, update 15). `tools/prepare.py miles --layout h100x3` (or `LAYOUT=h100x3` for `tools/reproduce.sh`) therefore uses three nodes:
+A 35B teacher does not fit on one 80 GB GPU, and Adam states for 35B do not fit next to 32k-token activations. Without context parallelism the trainer ran out of memory in the backward pass of a full-length sequence once responses grew (run 533, update 15). `tools/prepare.py miles --layout h100x3` or `tools/prepare.py verl --layout h100x3` (or `LAYOUT=h100x3` for `tools/reproduce.sh`) therefore uses three nodes:
 
 | Node | GPUs 0-1 | GPUs 2-7 |
 |---|---|---|
-| Trainer | Megatron TP2 with sequence parallelism, context parallelism 2, EP8, Adam offloaded to the CPU | (same) |
+| Trainer | Miles: Megatron TP2 with sequence parallelism, context parallelism 2, EP8, Adam offloaded to the CPU. verl: FSDP, Ulysses sequence parallelism 2, optimizer offloaded to the CPU | (same) |
 | Generation 1 | caesar_cipher teacher (TP2) | Policy, three TP2 engines |
 | Generation 2 | simple_geometry teacher (TP2) | Policy, three TP2 engines |
 
-The policy gets 12 GPUs, twice the six of `b200x2`. The site file adds `generation_node_2` and `generation_ip_2`; the trainer IP must sort below both generation IPs. Each node requests all 128 CPU cores and its whole memory (`--mem=0`), and each trainer rank gets 16 OpenMP threads for the CPU Adam step. For the benchmarks set `BENCH_TP=2`, since one model and its 32k cache do not fit on one GPU. If the shared filesystem is not `/shared`, set `SHARED` to its mount point.
+The policy gets 12 GPUs, twice the six of `b200x2`. verl places its own trainer, teacher and policy pools on the three-node Ray cluster, so which node and GPU indices each pool gets is Ray's choice; the pool sizes are the same. The site file adds `generation_node_2` and `generation_ip_2`; the trainer IP must sort below both generation IPs. Each node requests all 128 CPU cores and its whole memory (`--mem=0`), and each trainer rank gets 16 OpenMP threads for the CPU Adam step. For the benchmarks set `BENCH_TP=2`, since one model and its 32k cache do not fit on one GPU. If the shared filesystem is not `/shared`, set `SHARED` to its mount point.
 
 ## One command: `tools/reproduce.sh`
 
