@@ -239,6 +239,76 @@ class FireworksServerless:
         self.service.close()
 
 
+class SelfHosted:
+    """A self-hosted Tinker-compatible server at $TINKER_BASE_URL (see hosted/selfhosted/README.md).
+
+    The servers do not authenticate, but the SDK requires a key that starts with `tml-`. A teacher path of the form
+    `base:<model name>` samples a frozen model that the server serves by name (verl-tinker teachers); any other
+    path is a sampler checkpoint on the same server. Subclasses set what each server accepts.
+    """
+    name = 'self-hosted'
+    ACCEPTS_SEED = True  # create_lora_training_client(seed=...)
+    ACCEPTS_METADATA = True  # user_metadata on the session and on each training client
+    BASE_PREFIX = 'base:'
+
+    def __init__(self, experiment):
+        self.url = os.environ['TINKER_BASE_URL']
+        os.environ.setdefault('TINKER_API_KEY', 'tml-self-hosted')
+        server = json.loads(Path(os.environ['TINKER_SERVER_INFO']).read_text()) if os.environ.get('TINKER_SERVER_INFO') else {}
+        self.account = {'endpoint': self.url, 'server': self.name, 'server_info': server}
+        metadata = {'user_metadata': {'experiment': experiment}} if self.ACCEPTS_METADATA else {}
+        self.service = tinker.ServiceClient(base_url=self.url, api_key=os.environ['TINKER_API_KEY'], **metadata)
+
+    def capabilities(self, model):
+        caps = self.service.get_server_capabilities()
+        assert model in [m.model_name for m in caps.supported_models], f'{model} is not served at {self.url}'
+        return caps.model_dump()
+
+    def new_student(self, model, rank, seed, metadata):
+        return self.service.create_lora_training_client(
+            model, rank=rank, seed=seed if self.ACCEPTS_SEED else None,
+            **({'user_metadata': metadata} if self.ACCEPTS_METADATA else {}))
+
+    def resume_student(self, state_path):
+        return self.service.create_training_client_from_state_with_optimizer(state_path)
+
+    def sampler(self, model=None, path=None):
+        if path and path.startswith(self.BASE_PREFIX):
+            return self.service.create_sampling_client(base_model=path[len(self.BASE_PREFIX):])
+        return self.service.create_sampling_client(**({'model_path': path} if path else {'base_model': model}))
+
+    def sync(self, train, name):
+        path = train.save_weights_for_sampler(name=name).result().path
+        return self.sampler(path=path), path
+
+    def use_tokenizers(self, student, teacher):
+        pass
+
+    def close(self):
+        pass
+
+
+class SkyRL(SelfHosted):
+    """SkyRL's Tinker API server (`python -m skyrl.tinker.api --backend megatron`). LoRA alpha is a server setting, and
+    the seed is ignored. A sampler checkpoint stays servable only while its model is loaded, so the server runs with
+    --session-timeout-sec -1 and teachers are trained on the same server instance that serves them."""
+    name = 'skyrl'
+
+
+class Miles(SelfHosted):
+    """Miles' Tinker gateway (`serve_tinker.py`). It rejects a LoRA seed and user metadata, and caps the rank at the
+    server's --lora-rank."""
+    name = 'miles'
+    ACCEPTS_SEED = False
+    ACCEPTS_METADATA = False
+
+
+class Verl(SelfHosted):
+    """verl-tinker (`python -m verl_tinker.start`). One trainable model per server: teachers are frozen models that the
+    server config serves by name (`base:<name>` paths), and every training run needs its own server."""
+    name = 'verl'
+
+
 def service_config(resources, experiment=None):
     """from_firetitan_config arguments for the lease's trainer and deployment; closing never deletes them."""
     return dict(
@@ -255,4 +325,5 @@ def service_config(resources, experiment=None):
         **({'user_metadata': {'experiment': experiment}} if experiment else {}))
 
 
-BACKENDS = {'tinker': Tinker, 'fireworks': Fireworks, 'fireworks-serverless': FireworksServerless}
+BACKENDS = {'tinker': Tinker, 'fireworks': Fireworks, 'fireworks-serverless': FireworksServerless,
+            'skyrl': SkyRL, 'miles': Miles, 'verl': Verl}

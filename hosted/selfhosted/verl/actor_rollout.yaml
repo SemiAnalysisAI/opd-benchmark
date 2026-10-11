@@ -1,0 +1,77 @@
+# verl-tinker server for SFT and RL: a Qwen3.6-35B-A3B FSDP actor with server-side LoRA and a colocated vLLM rollout
+# on all four nodes. Adapted from verl-recipe verl_tinker/configs/advance/qwen3_8b_actor_rollout_lora.yaml
+# (242c73f). verl-tinker serves one trainable model, so every SFT teacher and the RL run needs its own server.
+# The rank and alpha are the Tinker clients' (64, and alpha 32 as on SkyRL and Miles); verl-tinker ignores the
+# client's lora_config. Lengths follow shared/recipe.py: 32,768-token context, up to 30,720 response tokens.
+server:
+  model_name: ${oc.env:TINKER_SERVER_MODEL_NAME,Qwen/Qwen3.6-35B-A3B}
+  host: ${oc.env:TINKER_SERVER_HOST,0.0.0.0}
+  port: ${oc.env:TINKER_SERVER_PORT,8000}
+  ray_address: ${oc.env:RAY_ADDRESS,local}
+  checkpoint_dir: ${oc.env:TINKER_CHECKPOINT_DIR,/tmp/tinker-checkpoints}
+  server_max_runtime: null
+  max_concurrent_samples: ${oc.env:TINKER_SERVER_MAX_CONCURRENT_SAMPLES,512}
+  enable_offload: true
+  auto_merge_verl_default_config: true
+
+actor_rollout_ref:
+  actor:
+    strategy: fsdp
+    use_kl_loss: false  # Tinker folds any KL into client-side advantages.
+    entropy_coeff: 0
+    ppo_mini_batch_size: 32
+    use_dynamic_bsz: true
+    ppo_max_token_len_per_gpu: 32768
+    ppo_micro_batch_size_per_gpu: 1
+    fsdp_config:
+      model_dtype: bfloat16
+      param_offload: false
+      optimizer_offload: false
+      use_orig_params: true  # PEFT adapter export needs the original parameter views (see the template).
+    optim:
+      lr_scheduler_type: constant
+      lr: 1.0e-05
+      weight_decay: 0.0
+  rollout:
+    name: vllm
+    mode: async
+    tensor_model_parallel_size: 4
+    pipeline_model_parallel_size: 1
+    gpu_memory_utilization: 0.7
+    prompt_length: 2048
+    response_length: 30720
+    max_num_seqs: 256
+    max_num_batched_tokens: 32768
+    enable_chunked_prefill: true
+    calculate_log_probs: true
+    log_prob_use_dynamic_bsz: true
+    log_prob_max_token_len_per_gpu: 32768
+    log_prob_micro_batch_size_per_gpu: 1
+    free_cache_engine: true
+    enforce_eager: false
+    load_format: safetensors
+    engine_kwargs:
+      vllm:
+        disable_custom_all_reduce: true
+    layered_summon: false
+    checkpoint_engine:
+      update_weights_bucket_megabytes: 4096
+  ref:
+    enable: false
+  model:
+    path: ${oc.env:TINKER_SERVER_MODEL_PATH,Qwen/Qwen3.6-35B-A3B}
+    use_remove_padding: true
+    enable_gradient_checkpointing: true
+    trust_remote_code: true
+    lora_rank: 64
+    lora_alpha: 32
+    target_modules: all-linear
+    lora_adapter_path: null
+
+trainer:
+  logger:
+  - console
+  project_name: verl_tinker_server
+  experiment_name: qwen3_6_35b_a3b_lora
+  nnodes: ${oc.env:TINKER_SERVER_NNODES,4}
+  n_gpus_per_node: 8
