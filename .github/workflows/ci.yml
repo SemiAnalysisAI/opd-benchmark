@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.12"
+      # frameworks/tinker is the pinned requirements file Dependabot watches.
+      - run: uv venv
+      - run: uv pip install -r frameworks/tinker/requirements.txt
+      # The repo's documented offline checks (no GPU, no cluster).
+      - run: .venv/bin/python -m unittest discover -s tests
+      - run: .venv/bin/python -m unittest discover -s frameworks/tinker -p 'test_*.py'
